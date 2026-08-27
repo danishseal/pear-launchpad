@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useLaunches, type Launch } from "./launches";
-import { useMarket, usd } from "@/lib/peard/market";
+import { usd } from "@/lib/peard/market";
+import { useToken } from "@/lib/peard/feed";
+import { OFFICIAL, OFFICIAL_MINT, useOfficial } from "@/lib/peard/official";
 import { useIcons, localIcon, tint } from "@/lib/peard/icons";
 import { AppHeader, AppSidebar } from "./app-chrome";
 
@@ -23,16 +25,35 @@ import { AppHeader, AppSidebar } from "./app-chrome";
  */
 
 /**
- * One launch's live numbers.
+ * One card's live numbers, through this app's own route.
  *
- * Per card rather than fetched in a batch, because DexScreener has no
- * multi-token endpoint that also returns the pair, and a launch grid is a
- * handful of tokens rather than the 121-entry registry this page used to
- * render.
+ * Per card rather than batched, because the grid is a handful of tokens
+ * rather than the 121-entry registry this page used to render, and because
+ * the route caches for ten seconds anyway: ten cards open in twenty tabs are
+ * still six calls a minute upstream.
  */
 function useCardMarket(mint: string) {
-  return useMarket(mint, 60_000);
+  return useToken(mint, 30_000);
 }
+
+/**
+ * peard's own token, pinned to the front of the grid ONCE IT EXISTS.
+ *
+ * Hidden until then, deliberately: a card reading "not launched yet" is an
+ * announcement, and the page should not be making one. What replaces it is
+ * the watch in `useOfficial`, which polls the mint and puts this card up the
+ * moment the coin is created, with no reload and nothing to switch on.
+ */
+const OFFICIAL_LAUNCH: Launch = {
+  mint: OFFICIAL_MINT,
+  name: OFFICIAL.name,
+  symbol: OFFICIAL.symbol,
+  at: Number.MAX_SAFE_INTEGER,
+  creator: "",
+  on: null,
+  onMeta: null,
+  legacy: null,
+};
 
 function Change({ pct }: { pct: number | null }) {
   if (pct === null) return <em className="zero" aria-label="24 hour change 0.00%">0.00%</em>;
@@ -44,8 +65,11 @@ function Change({ pct }: { pct: number | null }) {
 }
 
 function LaunchCard({ l, icon }: { l: Launch; icon?: string }) {
-  const art = l.on ? localIcon(l.on.id) ?? icon : undefined;
-  const { market, unlisted } = useCardMarket(l.mint);
+  const official = l.mint === OFFICIAL_MINT;
+  const { snap, loading } = useCardMarket(l.mint);
+  // The token's own artwork once the venue has it, then the registry mark,
+  // then initials. peard itself has a real logo either way.
+  const art = snap?.image ?? (official ? "/peard.webp" : l.on ? localIcon(l.on.id) ?? icon : undefined);
   return <Link className="coin-link" href={`/token/${l.mint}`}><article className="coin-card">
     {art
       // eslint-disable-next-line @next/next/no-img-element
@@ -54,11 +78,11 @@ function LaunchCard({ l, icon }: { l: Launch; icon?: string }) {
           <span>{(l.symbol || l.mint).slice(0, 3).toUpperCase()}</span>
         </div>}
     <div className="coin-info">
-      <h3>{l.name || l.symbol}</h3>
-      <div className="symbol">${l.symbol} <b>{l.on?.id ?? ""}</b></div>
+      <h3>{snap?.name ?? l.name ?? l.symbol}</h3>
+      <div className="symbol">${snap?.symbol ?? l.symbol} <b>{l.on?.id ?? ""}</b></div>
       <div className="numbers">
-        <strong>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : unlisted ? "$0" : "…"}</strong>
-        <Change pct={market?.change.h24 ?? null}/>
+        <strong>{snap?.marketCapUsd != null ? usd(snap.marketCapUsd) : loading ? "…" : "$0"}</strong>
+        <Change pct={snap?.change24hPct ?? null}/>
       </div>
       <div className="creator"><span className="avatar a0"><User weight="fill"/></span>
         {l.on ? `on ${l.on.id}` : "launch"}
@@ -119,8 +143,8 @@ function TopStrip({ launches, icons }: { launches: Launch[]; icons: Record<strin
 }
 
 function FeatureCard({ l, icon }: { l: Launch; icon?: string }) {
-  const art = l.on ? localIcon(l.on.id) ?? icon : undefined;
-  const { market } = useCardMarket(l.mint);
+  const { snap } = useCardMarket(l.mint);
+  const art = snap?.image ?? (l.mint === OFFICIAL_MINT ? "/peard.webp" : l.on ? localIcon(l.on.id) ?? icon : undefined);
   return <Link
     className="feature feature-plain feature-link"
     href={`/token/${l.mint}`}
@@ -144,10 +168,10 @@ function FeatureCard({ l, icon }: { l: Launch; icon?: string }) {
       {l.creator ? `${l.creator.slice(0, 10)}…` : "launch"}
     </div>
     <div className="feature-copy">
-      <div className="feature-token"><b>{l.name || l.symbol}</b><small>${l.symbol}</small></div>
+      <div className="feature-token"><b>{snap?.name ?? l.name ?? l.symbol}</b><small>${snap?.symbol ?? l.symbol}</small></div>
       <div className="quote">
-        <b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "$0"}</b>
-        <Change pct={market?.change.h24 ?? null}/>
+        <b>{snap?.marketCapUsd != null ? usd(snap.marketCapUsd) : "$0"}</b>
+        <Change pct={snap?.change24hPct ?? null}/>
       </div>
       <span className="feature-trade">Trade</span>
     </div>
@@ -197,12 +221,19 @@ function SearchableHome() {
 
 function HomeContent({ initialQuery }: { initialQuery: string }) {
   const { launches, error } = useLaunches();
+  // The watch. One cached call every fifteen seconds, and the only thing it
+  // decides is whether peard's own card is on the page at all.
+  const { awaiting } = useOfficial();
   const [q, setQ] = useState(initialQuery);
   const visibleLaunches = useMemo(() => {
     if (!launches) return null;
+    const all = [
+      ...(awaiting ? [] : [OFFICIAL_LAUNCH]),
+      ...launches.filter((launch) => launch.mint !== OFFICIAL_MINT),
+    ];
     const needle = q.trim().toLowerCase();
     return needle
-      ? launches.filter((launch) => [
+      ? all.filter((launch) => [
           launch.name,
           launch.symbol,
           launch.mint,
@@ -210,8 +241,8 @@ function HomeContent({ initialQuery }: { initialQuery: string }) {
           launch.on?.id,
           launch.onMeta?.name,
         ].filter(Boolean).join(" ").toLowerCase().includes(needle))
-      : launches;
-  }, [launches, q]);
+      : all;
+  }, [launches, q, awaiting]);
   const stripIcons = useIcons((visibleLaunches ?? []).map((l) => l.on?.assetMint));
   return <main className="app-shell app-chrome-shell">
     <div className="ambient"/>
