@@ -4,19 +4,12 @@ import {
   ArrowDown, ArrowUp, CaretLeft, CaretRight, User,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useLaunches, type Launch } from "./launches";
 import { useMarket, usd } from "@/lib/peard/market";
 import { useIcons, localIcon, tint } from "@/lib/peard/icons";
 import { AppHeader, AppSidebar } from "./app-chrome";
-
-/**
- * The search box does nothing yet, deliberately.
- *
- * It searched the registry, and the registry is no longer on this page. When
- * there are launches it should search THOSE; searching them today would be a
- * control that always returns nothing.
- */
 
 /*
  * The "Moved most recently" carousel is GONE, for the same reason the grid
@@ -161,7 +154,7 @@ function FeatureCard({ l, icon }: { l: Launch; icon?: string }) {
   </Link>;
 }
 
-function ExploreSection({ launches, error }: { launches: Launch[] | null; error: string | null }) {
+function ExploreSection({ launches, error, query }: { launches: Launch[] | null; error: string | null; query: string }) {
   const icons = useIcons((launches ?? []).map((l) => l.on?.assetMint));
 
   return <section className="explore" aria-labelledby="explore-title">
@@ -169,7 +162,14 @@ function ExploreSection({ launches, error }: { launches: Launch[] | null; error:
     {error ? <p style={{ color: "#e6a5a5", fontSize: 13 }}>Cannot read the chain: {error}</p> : null}
     {launches === null ? <p className="grid-empty">Reading the chain…</p> : null}
 
-    {launches !== null && launches.length === 0 ? (
+    {launches !== null && launches.length === 0 && query ? (
+      <div className="no-launches">
+        <h3>No coins found</h3>
+        <p>No launch matches “{query}”. Try a name, ticker, mint, creator, or underlying.</p>
+      </div>
+    ) : null}
+
+    {launches !== null && launches.length === 0 && !query ? (
       // Nothing launched yet, and saying so beats filling the grid with the
       // registry: those are the things you launch AGAINST, not things
       // anybody launched.
@@ -189,20 +189,37 @@ function ExploreSection({ launches, error }: { launches: Launch[] | null; error:
   </section>;
 }
 
-export default function HomePage() {
+function SearchableHome() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") ?? "";
+  return <HomeContent key={initialQuery} initialQuery={initialQuery}/>;
+}
+
+function HomeContent({ initialQuery }: { initialQuery: string }) {
   const { launches, error } = useLaunches();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const visibleLaunches = useMemo(() => {
     if (!launches) return null;
     const needle = q.trim().toLowerCase();
     return needle
-      ? launches.filter((launch) => `${launch.name} ${launch.symbol}`.toLowerCase().includes(needle))
+      ? launches.filter((launch) => [
+          launch.name,
+          launch.symbol,
+          launch.mint,
+          launch.creator,
+          launch.on?.id,
+          launch.onMeta?.name,
+        ].filter(Boolean).join(" ").toLowerCase().includes(needle))
       : launches;
   }, [launches, q]);
   const stripIcons = useIcons((visibleLaunches ?? []).map((l) => l.on?.assetMint));
   return <main className="app-shell app-chrome-shell">
     <div className="ambient"/>
     <AppSidebar/>
-    <section className="workspace"><AppHeader query={q} onQueryChange={setQ}/>{visibleLaunches?.length ? <TopStrip launches={visibleLaunches} icons={stripIcons}/> : null}<ExploreSection launches={visibleLaunches} error={error}/></section>
+    <section className="workspace"><AppHeader query={q} onQueryChange={setQ}/>{visibleLaunches?.length ? <TopStrip launches={visibleLaunches} icons={stripIcons}/> : null}<ExploreSection launches={visibleLaunches} error={error} query={q.trim()}/></section>
   </main>;
+}
+
+export default function HomePage() {
+  return <Suspense fallback={null}><SearchableHome/></Suspense>;
 }

@@ -509,7 +509,6 @@ function LaunchWizard() {
       <header className="launch-focus-header">
         <Link className="launch-wordmark" href="/">peard</Link>
         <div className="launch-focus-actions">
-          <span className="launch-chain"><i/> Solana</span>
           <ConnectButton/>
         </div>
       </header>

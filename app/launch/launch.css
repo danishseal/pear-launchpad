@@ -38,7 +38,7 @@
  */
 .wiz{width:min(760px,100%);margin:0 auto;padding:18px 32px 34px;display:block;border:0;border-radius:0;background:transparent;box-shadow:none}
 .wiz-chrome{display:flex;align-items:center;justify-content:space-between;height:44px;font-size:14px}
-.wiz-back,.wiz-next{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#a4afa7;text-decoration:none;padding:0}
+.wiz-back,.wiz-next{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#a4afa7;text-decoration:none;padding:0;font-weight:600}
 .wiz-back:hover{color:#e8f0ea}
 .wiz-next{color:#8e9d92}
 .wiz-rail{height:2px;border-radius:2px;background:rgba(255,255,255,.09);margin-bottom:34px}
@@ -262,16 +262,13 @@
 .launch-halo{display:none}
 .launch-main{width:100%;margin:0}
 .launch-canvas{width:min(760px,calc(100% - 32px));padding:62px 0 100px}
-.launch-focus-header{height:58px;padding:0 32px;display:flex;align-items:flex-start;justify-content:space-between}
-.launch-focus-header .launch-wordmark{width:146px;height:46px;margin:0;padding-left:49px;background-size:43px 43px;font-size:29px}
+.launch-focus-header{height:58px;padding:0 32px;display:flex;align-items:center;justify-content:space-between}
+.launch-focus-header .launch-wordmark{width:154px;height:54px;margin:0;padding-left:54px;background-size:54px 54px;font-size:29px}
 .launch-focus-header .launch-wordmark{font-size:0}
-.launch-focus-header .launch-wordmark::after{content:"";display:block;width:92px;height:28px;background:url('/peard-wordmark.svg') center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,255,255,.3))}
-.launch-shell,.launch-shell h1,.launch-shell h2,.launch-shell h3,.launch-shell button,.launch-shell input,.launch-shell textarea,.launch-shell select{font-family:var(--font-launch),Arial,sans-serif}
+.launch-focus-header .launch-wordmark::after{content:"";display:block;width:92px;height:28px;background:url('/peard-wordmark.svg') center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,255,255,.3));transform:translateY(2px)}
+.launch-shell,.launch-shell *{font-family:var(--font-launch),Arial,sans-serif!important}
 .launch-shell h1,.launch-shell h2,.launch-shell h3{font-weight:600}
 .launch-focus-actions{display:flex;align-items:center;gap:10px}
-.launch-chain{height:34px;padding:0 13px;border:1px solid rgba(205,228,209,.13);border-radius:18px;background:rgba(255,255,255,.035);display:flex;align-items:center;gap:7px;color:#d7e3da;font-size:12px;font-weight:600}
-.launch-chain i{width:9px;height:9px;border-radius:50%;background:#68c983;box-shadow:0 0 10px rgba(104,201,131,.5)}
-.launch-focus-actions .connect-wallet{height:34px;min-width:132px;border-radius:18px;font-size:12px}
 .wiz:has(.wiz-intro) .wiz-rail{margin-bottom:68px}
 .wiz-intro h1{font-size:27px;letter-spacing:-.45px}
 .wiz-intro .wiz-sub{font-size:14px}
@@ -281,8 +278,6 @@
 @media(max-width:560px){
   .launch-canvas{width:100%;padding-top:20px}
   .launch-focus-header{height:58px;padding:0 16px}
-  .launch-focus-actions .connect-wallet{min-width:96px}
-  .launch-chain{display:none}
   .wiz:has(.wiz-intro) .wiz-rail{margin-bottom:42px}
   .wiz-intro .wiz-steps{margin-top:38px}
 }

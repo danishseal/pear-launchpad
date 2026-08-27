@@ -1,4 +1,8 @@
 @import "tailwindcss";
+.search-submit{width:38px;height:100%;padding:0;border:0;background:transparent;display:grid;place-items:center;flex:none}
+.search-submit svg{margin:0}
+.search-submit:active{transform:scale(.9)}
+.search input[type="search"]::-webkit-search-cancel-button{cursor:pointer}
 /* Local WOFF2 families loaded through next/font in layout.tsx. */
 :root{--font-sans:var(--font-instrument-sans);--font-sans-medium:var(--font-instrument-sans);--font-sans-semibold:var(--font-instrument-sans);--font-sans-bold:var(--font-instrument-sans);--font-sans-condensed:var(--font-instrument-sans-condensed);--font-sans-condensed-bold:var(--font-instrument-sans-condensed);--font-serif:var(--font-instrument-serif);--font-mono:var(--font-source-code);--font-inter:var(--font-instrument-sans);--font-weight-bold:700}
 /* No faked weights or slants anywhere. If a face is missing it falls back to
@@ -34,7 +38,7 @@ html,body,*{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar
 .launch{text-decoration:none}.token-sidebar nav .token-launch-link{margin-top:3px;width:159px;height:56px;border-radius:15px;background:#fff;color:#176ada;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;padding:0}.token-sidebar nav .token-launch-link svg{width:20px;height:20px}
 
 /* Hassets brand mark */
-.brand,.token-brand{background-image:url('/money-bag-transparent.png')!important;background-position:left center!important;background-repeat:no-repeat!important;background-size:46px 46px!important;color:#fff!important;font-family:var(--font-instrument-serif),Georgia,serif!important;font-style:italic!important;font-size:29px!important;font-weight:400!important;letter-spacing:-.7px!important;text-decoration:none!important;text-shadow:0 0 7px rgba(255,255,255,.92),0 0 18px rgba(255,255,255,.48)!important;display:flex!important;align-items:center!important;padding-left:49px!important;width:166px!important;height:50px!important}.brand{margin-top:0!important}.token-brand{margin:0!important}
+.brand,.token-brand{background-image:url('/money-bag-transparent.png')!important;background-position:left center!important;background-repeat:no-repeat!important;background-size:54px 54px!important;color:#fff!important;font-family:var(--font-instrument-serif),Georgia,serif!important;font-style:italic!important;font-size:29px!important;font-weight:400!important;letter-spacing:-.7px!important;text-decoration:none!important;text-shadow:0 0 7px rgba(255,255,255,.92),0 0 18px rgba(255,255,255,.48)!important;display:flex!important;align-items:center!important;padding-left:54px!important;width:172px!important;height:54px!important}.brand{margin-top:0!important}.token-brand{margin:0!important}
 
 /* Hassets forest theme */
 :root{--navy:#222a24;--panel:#2c362f;--line:#465349;--muted:#a3afa6;--blue:#78a883}
@@ -46,8 +50,7 @@ html,body{background:#222a24}.app-shell{background:#222a24}.ambient{background-i
 /* The full feature card is the navigation target; this keeps the Trade label
    looking like the reference without introducing a nested link. */
 .feature-trade{width:69px;height:39px;border-radius:12px;background:#fff;color:#2268d2;font-weight:600;display:flex;align-items:center;justify-content:center;text-decoration:none}
-.feature-link{flex-basis:410px;color:inherit;text-decoration:none;cursor:pointer;transition:border-color .15s,transform .15s}
-.feature-link:hover{border-color:#78a883;transform:translateY(-2px)}
+.feature-link{flex-basis:410px;color:inherit;text-decoration:none;cursor:pointer}
 @media(max-width:700px){.feature-link{flex-basis:300px}}
 
 /* The right-hand cluster sits at the page gutter, not at the end of the
@@ -86,16 +89,36 @@ html,body{background:#222a24}.app-shell{background:#222a24}.ambient{background-i
 .signup,.token-signup{
   display:inline-flex;align-items:center;justify-content:center;
   font-family:var(--font-sans-semibold),var(--font-inter),Arial,sans-serif;
-  font-weight:400;font-size:13px;height:46px;border-radius:16px;
-  background:linear-gradient(#31533a,#4f7658);
-  border:1px solid #5d7d64;
-  box-shadow:inset 0 1px rgba(255,255,255,.1);
-  color:#f4fff7;
+  font-weight:400;font-size:15px;height:46px;border-radius:17px;
+  background:linear-gradient(180deg,#24653a 0%,#349852 48%,#73cf8d 100%);
+  border:2px solid #667c6b;
+  box-shadow:
+    inset 0 2px 7px rgba(215,255,224,.42),
+    inset 0 -5px 9px rgba(193,248,210,.24),
+    0 1px 0 rgba(4,16,8,.72);
+  color:#fff;
+  text-shadow:0 1px 1px rgba(12,48,22,.28);
 }
-.signup:hover,.token-signup:hover{background:linear-gradient(#385e42,#5a8263)}
+.signup:hover,.token-signup:hover{background:linear-gradient(180deg,#2a7242 0%,#3aa65a 48%,#82d99a 100%)}
 .signup:active,.token-signup:active{transform:translateY(1px)}
-.topbar-actions .connect-wallet{width:112px}
-@media(max-width:430px){.topbar-actions .connect-wallet{width:96px}}
+.connect-wallet{
+  width:132px;
+  height:46px!important;
+  padding:0 12px!important;
+  border-radius:17px!important;
+  font-family:var(--font-sans-bold),var(--font-sans),Arial,sans-serif!important;
+  font-weight:700!important;
+  -webkit-text-stroke:.3px currentColor;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.connect-wallet *{
+  font-family:var(--font-sans-bold),var(--font-sans),Arial,sans-serif!important;
+  font-weight:700!important;
+  -webkit-text-stroke:.3px currentColor;
+}
+@media(max-width:430px){.connect-wallet{width:120px}}
 
 .connect-error{color:#e0a3a3;font-size:11px;max-width:180px;line-height:1.3}
 
@@ -332,14 +355,51 @@ dialog[role="dialog"]:has(.hideScrollbar) .hideScrollbar>button{
 /* Shared app chrome follows the live Feel desktop shell: a centered header,
    a narrow floating rail, and content that yields to both side rails. */
 .app-chrome-shell .brand{display:block;margin:0 0 0 8px;text-decoration:none}
-.app-chrome-shell .brand{display:flex!important;font-size:0!important}
-.app-chrome-shell .brand::after{content:"";display:block;width:92px;height:28px;background:url('/peard-wordmark.svg') center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,255,255,.3))}
+.app-chrome-shell .brand{display:flex!important;font-size:0!important;transform:translateX(-8px)}
+.app-chrome-shell .brand::after{content:"";display:block;width:92px;height:28px;background:url('/peard-wordmark.svg') center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,255,255,.3));transform:translateY(2px)}
 .app-chrome-shell .nav-item{
   width:max-content;min-width:100px;padding-inline:13px;text-decoration:none;
   font-family:var(--font-sans-semibold),var(--font-sans),Arial,sans-serif;
   font-weight:600;
 }
+.app-chrome-shell .nav-item,
+.app-chrome-shell .launch,
+.app-chrome-shell .more{
+  transition:transform 160ms cubic-bezier(.2,.8,.2,1),background-color 160ms ease,color 160ms ease,box-shadow 160ms ease;
+  transform-origin:left center;
+}
+.app-chrome-shell .nav-item:hover,
+.app-chrome-shell .more:hover{transform:translateX(3px);color:#dce8df}
+.app-chrome-shell .launch:hover{transform:translateY(-2px);box-shadow:inset 0 0 12px #526556,0 5px 14px rgba(7,14,9,.2)}
+.app-chrome-shell .nav-item:active,
+.app-chrome-shell .more:active{transform:translateX(2px) scale(.96)}
+.app-chrome-shell .launch:active{transform:translateY(0) scale(.96)}
 .app-chrome-shell .launch.active{border-color:#78a883;background:linear-gradient(145deg,#435547,#303d33)}
+.app-chrome-shell .more-wrap{position:relative;margin-top:auto}
+.app-chrome-shell .more-wrap .more{margin-top:0}
+.app-chrome-shell .more.active{color:#dce8df;background:#303d33}
+.app-chrome-shell .more-menu{
+  position:absolute;left:0;bottom:67px;width:240px;padding:10px;
+  border:1px solid #465349;border-radius:18px;background:rgba(35,46,38,.97);
+  box-shadow:0 18px 46px rgba(5,10,7,.42),inset 0 1px rgba(255,255,255,.05);
+  backdrop-filter:blur(14px);animation:more-menu-in 160ms cubic-bezier(.2,.8,.2,1) both;
+}
+.app-chrome-shell .more-menu a{
+  height:45px;padding:0 11px;border-radius:11px;color:#dce8df;text-decoration:none;
+  display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;
+  transition:background-color 140ms ease,transform 140ms ease;
+}
+.app-chrome-shell .more-menu a:hover{background:#344239;transform:translateX(2px)}
+.app-chrome-shell .more-menu a>svg:first-child{width:19px;height:19px;color:#91c29c}
+.app-chrome-shell .more-menu a>span{flex:1}
+.app-chrome-shell .more-menu a>svg:last-child{width:14px;height:14px;color:#7f8e83}
+@keyframes more-menu-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .app-chrome-shell .nav-item,
+  .app-chrome-shell .launch,
+  .app-chrome-shell .more,
+  .app-chrome-shell .more-menu{transition:none;animation:none}
+}
 .app-shell .feature-viewport{position:relative;overflow:hidden}
 .app-shell .feature-viewport.is-scrollable::after{
   content:"";position:absolute;z-index:4;top:0;right:0;bottom:0;width:76px;

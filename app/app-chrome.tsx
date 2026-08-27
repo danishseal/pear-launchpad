@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  DotsThreeOutline, House, Info, MagnifyingGlass, Plus, UserCircle,
+  ArrowSquareOut, BookOpen, DotsThreeOutline, GlobeHemisphereWest, House, MagnifyingGlass, Plus, UserCircle, XLogo,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConnectButton } from "./connect-button";
 
 const navItems = [
@@ -15,6 +15,24 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [moreOpen]);
 
   return <aside className="sidebar">
     <Link className="brand" href="/" aria-label="Peard home">peard</Link>
@@ -29,7 +47,16 @@ export function AppSidebar() {
         <Plus weight="bold"/> Launch a coin
       </Link>
     </nav>
-    <Link className="more" href="/account"><DotsThreeOutline/> More</Link>
+    <div className="more-wrap" ref={moreRef}>
+      {moreOpen ? <div className="more-menu" id="more-menu">
+        <a href="https://x.com/peard_assets" target="_blank" rel="noopener noreferrer"><XLogo/> <span>X / Twitter</span><ArrowSquareOut/></a>
+        <a href="https://peard.fun" target="_blank" rel="noopener noreferrer"><GlobeHemisphereWest/> <span>Peard</span><ArrowSquareOut/></a>
+        <a href="https://docs.peard.fun" target="_blank" rel="noopener noreferrer"><BookOpen/> <span>Docs</span><ArrowSquareOut/></a>
+      </div> : null}
+      <button className={`more${moreOpen ? " active" : ""}`} type="button" aria-expanded={moreOpen} aria-controls="more-menu" onClick={() => setMoreOpen((open) => !open)}>
+        <DotsThreeOutline/> More
+      </button>
+    </div>
   </aside>;
 }
 
@@ -45,12 +72,23 @@ export function AppHeader({
   const setValue = onQueryChange ?? setLocalQuery;
 
   return <header className="topbar">
-    <label className="search">
-      <MagnifyingGlass/>
-      <input aria-label="Search" placeholder="Search underlyings" value={value} onChange={(event) => setValue(event.target.value)}/>
-    </label>
+    <form className="search" role="search" action="/">
+      <button className="search-submit" type="submit" aria-label="Search"><MagnifyingGlass/></button>
+      <input
+        type="search"
+        name="q"
+        aria-label="Search coins"
+        placeholder="Search coins"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          event.currentTarget.form?.requestSubmit();
+        }}
+      />
+    </form>
     <div className="topbar-actions">
-      <button className="how" type="button"><Info weight="fill"/> How it works</button>
       <ConnectButton/>
     </div>
   </header>;

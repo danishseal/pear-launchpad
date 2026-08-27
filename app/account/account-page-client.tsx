@@ -7,7 +7,7 @@ import { loadAll, type Market, type Pairable } from "@/lib/peard/chain";
 import { explorerUrl } from "@/lib/peard/config";
 import { ConnectButton } from "../connect-button";
 import { AppHeader, AppSidebar } from "../app-chrome";
-import { ArrowDown, ArrowUp, Coins, Gift, RocketLaunch, ShareNetwork, SlidersHorizontal, User } from "@phosphor-icons/react";
+import { Check, Coins, Copy, CurrencyDollar, PlusSquare, RocketLaunch, ShareNetwork, SlidersHorizontal, User, X } from "@phosphor-icons/react";
 
 const tabs = ["Holdings", "Launches", "Activity"] as const;
 
@@ -20,18 +20,87 @@ const tabs = ["Holdings", "Launches", "Activity"] as const;
  * identical otherwise and one of them is a bug.
  */
 function useMyLaunches(owner: string | null) {
-  const [state, setState] = useState<{ markets: Market[]; pairables: Pairable[] } | null>(null);
+  const [state, setState] = useState<{ owner: string; markets: Market[]; pairables: Pairable[] } | null>(null);
   useEffect(() => {
-    if (!owner) { setState(null); return; }
+    if (!owner) return;
     let live = true;
     loadAll()
-      .then((snap) => { if (live) setState({ markets: snap.markets.filter((m) => m.creator === owner), pairables: snap.pairables }); })
-      .catch(() => { if (live) setState({ markets: [], pairables: [] }); });
+      .then((snap) => { if (live) setState({ owner, markets: snap.markets.filter((m) => m.creator === owner), pairables: snap.pairables }); })
+      .catch(() => { if (live) setState({ owner, markets: [], pairables: [] }); });
     return () => { live = false; };
   }, [owner]);
-  return state;
+  return owner && state?.owner === owner ? state : null;
 }
 type AccountTab = (typeof tabs)[number];
+
+function useSolBalance(owner: string | null) {
+  const [balance, setBalance] = useState<{ owner: string; sol: number | null; failed: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!owner) return;
+    let live = true;
+    const read = () => fetch(`/api/balance?address=${encodeURIComponent(owner)}`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Balance request failed");
+        return response.json() as Promise<{ sol: number }>;
+      })
+      .then(({ sol }) => {
+        if (live) setBalance({ owner, sol, failed: false });
+      })
+      .catch(() => {
+        if (live) setBalance({ owner, sol: null, failed: true });
+      });
+    void read();
+    const timer = window.setInterval(read, 15_000);
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+    };
+  }, [owner]);
+
+  if (!owner) return { sol: null, loading: false, failed: false };
+  if (!balance || balance.owner !== owner) return { sol: null, loading: true, failed: false };
+  return { sol: balance.sol, loading: false, failed: balance.failed };
+}
+
+function CashCard({ owner }: { owner: string | null }) {
+  const [fundingOpen, setFundingOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const balance = useSolBalance(owner);
+  const balanceLabel = !owner
+    ? "—"
+    : balance.loading
+      ? "…"
+      : balance.failed || balance.sol === null
+        ? "Unavailable"
+        : `${balance.sol.toLocaleString(undefined, { maximumFractionDigits: 4 })} SOL`;
+
+  async function copyAddress() {
+    if (!owner) return;
+    await navigator.clipboard.writeText(owner);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  }
+
+  return <>
+    <article className="cash-card">
+      <div className="cash-balance-row"><span className="cash-balance-label"><i><CurrencyDollar weight="bold"/></i>Cash balance</span><strong>{balanceLabel}</strong></div>
+      {owner
+        ? <button className="account-add-cash" type="button" onClick={() => setFundingOpen(true)}><PlusSquare weight="bold"/>Add cash</button>
+        : <ConnectButton className="account-add-cash" connectLabel="Add cash"/>}
+    </article>
+    {fundingOpen && owner ? <div className="funding-overlay" role="presentation" onMouseDown={() => setFundingOpen(false)}>
+      <section className="funding-dialog" role="dialog" aria-modal="true" aria-labelledby="funding-title" onMouseDown={(event) => event.stopPropagation()}>
+        <button className="funding-close" type="button" aria-label="Close" onClick={() => setFundingOpen(false)}><X/></button>
+        <span className="funding-mark"><CurrencyDollar weight="bold"/></span>
+        <h2 id="funding-title">Add cash</h2>
+        <p>Send SOL or another supported Solana asset to your wallet address.</p>
+        <div className="funding-address"><code>{owner}</code><button type="button" onClick={copyAddress}>{copied ? <Check weight="bold"/> : <Copy/>}{copied ? "Copied" : "Copy"}</button></div>
+        <a href={explorerUrl("address", owner)} target="_blank" rel="noopener noreferrer">View wallet on Solana Explorer</a>
+      </section>
+    </div> : null}
+  </>;
+}
 
 function TabBody({ tab, connected, mine }: {
   tab: AccountTab;
@@ -93,12 +162,10 @@ export default function AccountPageClient() {
       <div><h1>{short ?? "Account"}</h1>
         {owner ? <a href={explorerUrl("address", owner)} target="_blank" rel="noopener noreferrer" style={{ color: "#94a397", fontSize: 13 }}>view on explorer</a> : <ConnectButton className="account-signup" connectLabel="Connect"/>}
       </div>
-      <button className="share-profile" aria-label="Share profile"><ShareNetwork /></button>
-      <button className="earn-button"><Gift weight="fill" />Earn</button></div>
+      <button className="share-profile" aria-label="Share profile"><ShareNetwork /></button></div>
     <div className="account-summary">
       <article className="portfolio-card"><div className="summary-label">Launched by you</div><strong>{mine ? mine.markets.length : connected ? "…" : "—"}</strong></article>
-      <article className="cash-card"><div><span className="summary-label">Cluster</span><strong style={{ fontSize: 20 }}>mainnet-beta</strong></div>
-        <div className="cash-actions"><Link href="/launch"><ArrowUp />Launch a coin</Link><Link href="/"><ArrowDown />Explore</Link></div></article></div>
+      <CashCard owner={owner}/></div>
     <section className="profile-card"><div className="account-tabs" role="tablist">{tabs.map(tab => <button role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? "active" : ""} onClick={() => setActiveTab(tab)} key={tab}>{tab}</button>)}</div>
       <TabBody tab={activeTab} connected={connected} mine={mine}/></section>
   </section></main>;
