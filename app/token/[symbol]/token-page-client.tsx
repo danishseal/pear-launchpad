@@ -6,13 +6,14 @@ import {
   ArrowSquareOut, CaretLeft, CheckCircle, Copy,
   ShareNetwork,
 } from "@phosphor-icons/react";
-import { useUnderlying, ago, type Detail } from "@/lib/peard/underlying-detail";
+import { useUnderlying, ago } from "@/lib/peard/underlying-detail";
 import { formatPrice } from "@/lib/peard/underlyings";
 import { explorerUrl } from "@/lib/peard/config";
 import { useIcons, localIcon, tint } from "@/lib/peard/icons";
 import { useMarket, usd, chartUrl } from "@/lib/peard/market";
 import { attachmentFor, resolveUnderlying, type Attachment } from "@/lib/peard/attachments";
 import { AppHeader, AppSidebar } from "../../app-chrome";
+import { useLaunches } from "../../launches";
 
 /**
  * One page, two things it can be showing.
@@ -46,16 +47,27 @@ function Mark({ id, mint, size }: { id: string; mint: string | null; size?: numb
 
 function LaunchView({ mint }: { mint: string }) {
   const [att] = useState<Attachment | null>(() => attachmentFor(mint));
+  const [detailTab, setDetailTab] = useState<"about" | "holders" | "activity">("about");
+  const { launches } = useLaunches();
+  const launch = launches?.find((candidate) => candidate.mint === mint) ?? null;
   const { market, loading, unlisted } = useMarket(mint);
+  const name = att?.name ?? launch?.name ?? "Launch";
+  const symbol = att?.symbol ?? launch?.symbol ?? mint.slice(0, 4);
+  const launchUnderlying = att?.underlying ?? launch?.on?.id ?? null;
+  const price = loading ? "…" : usd(market?.priceUsd ?? 0, 6);
+  const marketCap = loading ? "…" : usd(market?.marketCapUsd ?? market?.fdvUsd ?? 0);
+  const liquidity = loading ? "…" : usd(market?.liquidityUsd ?? 0);
+  const volume24h = loading ? "…" : usd(market?.volume.h24 ?? 0);
 
   // Local first, then the chain. A launch made against peard's own programs
   // carries its underlying in the Market account, so it is knowable on any
   // device rather than only the one that made it.
-  const [under, setUnder] = useState<string | null>(att?.underlying ?? null);
+  const [resolvedUnder, setResolvedUnder] = useState<string | null>(null);
+  const under = launchUnderlying ?? resolvedUnder;
   useEffect(() => {
     if (under) return;
     let live = true;
-    resolveUnderlying(mint).then((id) => { if (live && id) setUnder(id); });
+    resolveUnderlying(mint).then((id) => { if (live && id) setResolvedUnder(id); });
     return () => { live = false; };
   }, [mint, under]);
 
@@ -64,12 +76,12 @@ function LaunchView({ mint }: { mint: string }) {
   return <main className="token-shell app-chrome-shell"><AppSidebar/><div className="token-main"><AppHeader/>
     <section className="token-identity">
       <Link href="/" aria-label="Back"><CaretLeft/></Link>
-      <Mark id={under ?? mint} mint={detail?.p.assetMint ?? null}/>
+      <Mark id={under ?? launchUnderlying ?? mint} mint={detail?.p.assetMint ?? launch?.on?.assetMint ?? null}/>
       <div className="token-identity-copy">
-        <h1>{att?.name ?? "Launch"}
+        <h1>{name}
           <button aria-label="Copy link" className="icon-btn" onClick={() => navigator.clipboard?.writeText(window.location.href)}><ShareNetwork/></button>
         </h1>
-        <p>${att?.symbol ?? mint.slice(0, 4)}
+        <p>${symbol}
           <button aria-label="Copy the mint" className="icon-btn" onClick={() => navigator.clipboard?.writeText(mint)}><Copy/></button>
         </p>
         <div className="token-badges">
@@ -83,14 +95,14 @@ function LaunchView({ mint }: { mint: string }) {
     <div className="token-layout">
       <div>
         <section className="token-overview" aria-label="Market overview">
-          <div><span>Price</span><b>{market ? usd(market.priceUsd, 6) : "—"}</b></div>
-          <div><span>Market cap</span><b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "—"}</b></div>
-          <div><span>Liquidity</span><b>{market ? usd(market.liquidityUsd) : "—"}</b></div>
-          <div><span>24h volume</span><b>{market ? usd(market.volume.h24) : "—"}</b></div>
+          <div><span>Price</span><b>{price}</b></div>
+          <div><span>Market cap</span><b>{marketCap}</b></div>
+          <div><span>Liquidity</span><b>{liquidity}</b></div>
+          <div><span>24h volume</span><b>{volume24h}</b></div>
         </section>
         <section className="chart-panel">
           <div className="chart-value">
-            <strong>{market ? usd(market.priceUsd, 6) : loading ? "…" : "—"}</strong>
+            <strong>{price}</strong>
             <span>price</span>
             {market?.change.h24 !== null && market?.change.h24 !== undefined
               ? <em style={{ color: market.change.h24 >= 0 ? "#7fd396" : "#d99" }}>
@@ -99,7 +111,7 @@ function LaunchView({ mint }: { mint: string }) {
               : null}
           </div>
           <div className="unit-price">
-            <b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "—"}</b><span>MARKET CAP</span>
+            <b>{marketCap}</b><span>MARKET CAP</span>
           </div>
 
           {/*
@@ -122,40 +134,59 @@ function LaunchView({ mint }: { mint: string }) {
         </section>
 
         <section className="token-details">
-          <h3>Market</h3>
-          <div className="stat-row stripe"><span>Price</span><b>{market ? usd(market.priceUsd, 6) : "—"}</b></div>
-          <div className="stat-row"><span>Market cap</span><b>{market ? usd(market.marketCapUsd) : "—"}</b></div>
-          <div className="stat-row stripe"><span>Liquidity</span><b>{market ? usd(market.liquidityUsd) : "—"}</b></div>
-          <div className="stat-row"><span>Volume 24h</span><b>{market ? usd(market.volume.h24) : "—"}</b></div>
-          <div className="stat-row stripe"><span>Trades 24h</span><b>{market?.txns24h ? `${market.txns24h.buys} buys / ${market.txns24h.sells} sells` : "—"}</b></div>
-          <div className="stat-row"><span>Venue</span><b>{market?.dexId ?? "Meteora"}</b></div>
+          <div className="detail-tabs" role="tablist" aria-label="Token details">
+            {(["about", "holders", "activity"] as const).map((tab) => (
+              <button
+                className={detailTab === tab ? "active" : ""}
+                key={tab}
+                onClick={() => setDetailTab(tab)}
+                role="tab"
+                aria-selected={detailTab === tab}
+              >{tab[0].toUpperCase() + tab.slice(1)}</button>
+            ))}
+          </div>
 
-          <h3>The underlying</h3>
-          {detail ? <>
-            <div className="stat-row stripe"><span>{detail.p.id}</span><b>{detail.meta?.name ?? detail.p.unit}</b></div>
-            <div className="stat-row"><span>Its price</span><b>{formatPrice(detail.p.price)} per {detail.p.unit}</b></div>
-            <div className="stat-row stripe"><span>Last pushed</span><b>{ago(detail.p.priceLastTs)}</b></div>
-            <div className="stat-row"><span></span><b><Link href={`/token/${detail.p.id.toLowerCase()}`} style={{ color: "inherit" }}>See the underlying <ArrowSquareOut/></Link></b></div>
-          </> : (
-            <div className="stat-row stripe"><span>Underlying</span><b>{under ?? "reading…"}</b></div>
-          )}
+          {detailTab === "about" ? <>
+            <div className="market-links">
+              <a href={`https://dexscreener.com/solana/${mint}`} target="_blank" rel="noopener noreferrer">DexScreener</a>
+              <a href={explorerUrl("address", mint)} target="_blank" rel="noopener noreferrer">Solana Explorer</a>
+              {under ? <Link href={`/token/${under.toLowerCase()}`}>{under} underlying</Link> : null}
+            </div>
 
-          <h3>Contract</h3>
-          <div className="stat-row stripe"><span>Mint</span><b>
-            <a href={explorerUrl("address", mint)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>
-              {mint.slice(0, 4)}…{mint.slice(-4)} <ArrowSquareOut/>
-            </a>
-          </b></div>
-          {market?.url ? <div className="stat-row"><span>Pair</span><b>
-            <a href={market.url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>DexScreener <ArrowSquareOut/></a>
-          </b></div> : null}
+            <div className="creator-row"><span>Creator</span><b>
+              <i className="creator-token-avatar">{symbol.slice(0, 1).toUpperCase()}</i>
+              {launch?.creator ? `${launch.creator.slice(0, 8)}…${launch.creator.slice(-4)}` : "—"}
+            </b></div>
+            <div className="fee-row"><span>Creator fees</span><b>$0</b></div>
+
+            <h3>Stats</h3>
+            <div className="stat-row stripe"><span>Starting MCAP</span><b>{launch?.legacy ? "$50K" : "$5K"}</b></div>
+            <div className="stat-row"><span>Pool pairing</span><b>{under ?? "—"}</b></div>
+            <div className="stat-row stripe"><span>All-time volume</span><b>$0</b></div>
+            <div className="stat-row"><span>24h volume</span><b>{volume24h}</b></div>
+            <div className="stat-row stripe"><span>Total Supply</span><b>1B</b></div>
+            <div className="stat-row"><span>Created</span><b>{launch?.at ? ago(launch.at) : "—"}</b></div>
+            <div className="stat-row stripe"><span>Market fee</span><b>{((launch?.legacy?.market.feeBps ?? 100) / 100).toFixed(2)}%</b></div>
+            <div className="stat-row"><span>Trade feeling</span><b><i className="feeling-pill">Peard</i></b></div>
+
+            <h3>Contract</h3>
+            <div className="stat-row stripe"><span>Chain</span><b>Solana</b></div>
+            <div className="stat-row"><span>Contract Address</span><b>
+              <a href={explorerUrl("address", mint)} target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>
+                {mint.slice(0, 6)}…{mint.slice(-4)} <ArrowSquareOut/>
+              </a>
+            </b></div>
+          </> : <div className="detail-tab-empty">
+            <b>No {detailTab} data yet</b>
+            <span>This section will populate when indexed activity is available.</span>
+          </div>}
         </section>
       </div>
 
       <aside className="trade-panel">
         <div className="perp-head"><b>Trade</b><span>{market ? market.dexId : "pending"}</span></div>
         <div className="trade-summary">
-          <div><span>Token</span><b>${att?.symbol ?? mint.slice(0, 4)}</b></div>
+          <div><span>Token</span><b>${symbol}</b></div>
           <div><span>Quote</span><b>USDC</b></div>
           <div><span>Underlying</span><b>{under ?? "—"}</b></div>
         </div>

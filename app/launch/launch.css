@@ -58,12 +58,26 @@
 .wiz-steps li{display:flex;align-items:center;gap:12px;font-size:14px;color:#dbe5dd}
 .wiz-steps span{flex:none;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.08);color:#a4afa7;font-size:11px;display:grid;place-items:center}
 .wiz-intro .wiz-note{max-width:420px;margin-left:auto;margin-right:auto;text-align:center}
+.wiz-orbit{position:relative;width:220px;height:220px;margin:4px auto 0;animation:wiz-orbit-spin 22s linear infinite;transform-origin:110px 110px}
+.wiz-orbit .wiz-avatar{position:absolute;width:52px!important;height:52px!important;border:1px solid rgba(226,239,229,.22);background:#1c2920!important;box-shadow:0 8px 18px rgba(3,10,5,.34)}
+.wiz-orbit .wiz-avatar:nth-child(1){left:84px;top:4px}
+.wiz-orbit .wiz-avatar:nth-child(2){left:141px;top:27px}
+.wiz-orbit .wiz-avatar:nth-child(3){left:164px;top:84px}
+.wiz-orbit .wiz-avatar:nth-child(4){left:141px;top:141px}
+.wiz-orbit .wiz-avatar:nth-child(5){left:84px;top:164px}
+.wiz-orbit .wiz-avatar:nth-child(6){left:27px;top:141px}
+.wiz-orbit .wiz-avatar:nth-child(7){left:4px;top:84px}
+.wiz-orbit .wiz-avatar:nth-child(8){left:27px;top:27px}
+@keyframes wiz-orbit-spin{to{transform:rotate(360deg)}}
+@keyframes wiz-orbit-counter-spin{to{transform:rotate(-360deg)}}
+.wiz-orbit .wiz-avatar{animation:wiz-orbit-counter-spin 22s linear infinite}
+@media(prefers-reduced-motion:reduce){.wiz-orbit,.wiz-orbit .wiz-avatar{animation:none}}
 
 .wiz-cta{width:100%;height:52px;margin-top:32px;border:0;border-radius:14px;background:#e9f2ea;color:#25452e;font-size:13px;font-weight:600;letter-spacing:.4px}
 .wiz-cta:disabled{opacity:.42;cursor:not-allowed}
 .wiz-cta:hover:not(:disabled){background:#fff}
 .wiz-connect{margin-top:32px}
-.wiz-connect .wiz-cta{margin-top:0}
+.wiz-connect .wiz-cta{margin-top:0;display:flex;align-items:center;justify-content:center;padding:0 20px;line-height:1;text-align:center;cursor:pointer}
 
 .wiz-search{display:flex;align-items:center;gap:9px;height:46px;padding:0 13px;margin-top:22px;border:1px solid #465349;border-radius:11px;background:rgba(255,255,255,.03)}
 .wiz-search svg{width:16px;height:16px;color:#8e9d92;flex:none}
@@ -240,3 +254,79 @@
 .wiz-chips button{box-shadow:none}
 .wiz-chips button.on{background:#e9f2ea;border-color:#e9f2ea;color:#25452e}
 .wiz-fee-split>div{background:#2a3a2e}
+
+/* Focused launch flow: the launch wizard is its own compact product surface,
+   rather than another page inside the discovery sidebar. */
+.launch-shell{min-height:100vh;background:linear-gradient(145deg,#061109 0%,#092315 58%,#0b2d1a 100%)}
+.launch-shell:before{background:none;opacity:0}
+.launch-halo{display:none}
+.launch-main{width:100%;margin:0}
+.launch-canvas{width:min(760px,calc(100% - 32px));padding:62px 0 100px}
+.launch-focus-header{height:58px;padding:0 32px;display:flex;align-items:flex-start;justify-content:space-between}
+.launch-focus-header .launch-wordmark{width:146px;height:46px;margin:0;padding-left:49px;background-size:43px 43px;font-size:29px}
+.launch-focus-header .launch-wordmark{font-size:0}
+.launch-focus-header .launch-wordmark::after{content:"";display:block;width:92px;height:28px;background:url('/peard-wordmark.svg') center/contain no-repeat;filter:drop-shadow(0 0 8px rgba(255,255,255,.3))}
+.launch-shell,.launch-shell h1,.launch-shell h2,.launch-shell h3,.launch-shell button,.launch-shell input,.launch-shell textarea,.launch-shell select{font-family:var(--font-launch),Arial,sans-serif}
+.launch-shell h1,.launch-shell h2,.launch-shell h3{font-weight:600}
+.launch-focus-actions{display:flex;align-items:center;gap:10px}
+.launch-chain{height:34px;padding:0 13px;border:1px solid rgba(205,228,209,.13);border-radius:18px;background:rgba(255,255,255,.035);display:flex;align-items:center;gap:7px;color:#d7e3da;font-size:12px;font-weight:600}
+.launch-chain i{width:9px;height:9px;border-radius:50%;background:#68c983;box-shadow:0 0 10px rgba(104,201,131,.5)}
+.launch-focus-actions .connect-wallet{height:34px;min-width:132px;border-radius:18px;font-size:12px}
+.wiz:has(.wiz-intro) .wiz-rail{margin-bottom:68px}
+.wiz-intro h1{font-size:27px;letter-spacing:-.45px}
+.wiz-intro .wiz-sub{font-size:14px}
+.wiz-intro .wiz-steps{max-width:420px;margin-top:52px}
+.wiz-intro .wiz-note{margin-top:22px}
+.wiz-intro .wiz-cta{width:min(480px,100%);margin-top:34px}
+@media(max-width:560px){
+  .launch-canvas{width:100%;padding-top:20px}
+  .launch-focus-header{height:58px;padding:0 16px}
+  .launch-focus-actions .connect-wallet{min-width:96px}
+  .launch-chain{display:none}
+  .wiz:has(.wiz-intro) .wiz-rail{margin-bottom:42px}
+  .wiz-intro .wiz-steps{margin-top:38px}
+}
+
+/* Step two follows the reference's browse hierarchy while staying backed by
+   Peard's live underlying registry. */
+.wiz:has(.wiz-pick) .wiz-rail{margin-bottom:68px}
+.wiz-pick>h2,.wiz-pick>.wiz-sub{text-align:center}
+.wiz-pick .wiz-search{margin-top:40px;background:rgba(255,255,255,.025)}
+.wiz-pick .wiz-row-head{margin-top:24px}
+.wiz-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;overflow:visible}
+.wiz-quick-card{min-width:0;height:86px;padding:13px 16px;background:#0d2a18;border-color:#244b31}
+.wiz-quick-card .wiz-avatar{width:48px!important;height:48px!important}
+.wiz-quick-card b{font-size:15px}
+.wiz-quick-card small{font-size:11px;margin-top:5px}
+.wiz-themes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.wiz-themes>button{height:132px;padding:16px;border:1px solid #244b31;border-radius:14px;background:linear-gradient(145deg,#10331d,#0b2515);color:inherit;text-align:left}
+.wiz-themes>button:hover{border-color:#78a883}
+.wiz-theme-icons{height:42px;display:flex;align-items:center;margin-bottom:13px}
+.wiz-theme-icons .wiz-avatar{border:2px solid #173420;background:#1c2920!important}
+.wiz-theme-icons .wiz-avatar+ .wiz-avatar{margin-left:-10px}
+.wiz-themes b,.wiz-themes small{display:block;text-transform:capitalize}
+.wiz-themes b{font-size:14px}
+.wiz-themes small{margin-top:5px;color:#7f9985;font-size:11px}
+.wiz-trending li:first-child button{background:#0c2817}
+.wiz-trending button{height:56px;padding:8px 14px}
+.wiz-featured{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wiz-featured>button{height:86px;display:flex;align-items:center;gap:13px;padding:13px 16px;border:1px solid #244b31;border-radius:14px;background:#0d2a18;color:inherit;text-align:left}
+.wiz-featured>button:hover{border-color:#78a883}
+.wiz-featured b,.wiz-featured small{display:block}
+.wiz-featured b{font-size:15px}
+.wiz-featured small{margin-top:4px;color:#8da493;font-size:11px}
+.wiz-clear-theme{border:0;background:none;color:#9abc9f;font-size:11px;padding:0}
+.wiz-market-list{display:flex;flex-direction:column;gap:2px;padding-bottom:40px}
+.wiz-market-list .wiz-card{height:54px;display:flex;align-items:center;gap:12px;padding:7px 12px;border:0;border-radius:10px;background:transparent;box-shadow:none}
+.wiz-market-list .wiz-card:hover{background:rgba(255,255,255,.035)}
+.wiz-market-list .wiz-card-id{min-width:0}
+.wiz-market-list .wiz-card-id b{font-size:13px}
+.wiz-market-list .wiz-card-id small{font-size:11px;margin-top:3px}
+.wiz-market-price{margin-left:auto;color:#789080;font-size:10px;white-space:nowrap}
+@media(max-width:700px){
+  .wiz:has(.wiz-pick) .wiz-rail{margin-bottom:42px}
+  .wiz-quick{display:flex;overflow-x:auto}
+  .wiz-quick-card{flex:0 0 220px}
+  .wiz-themes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wiz-featured{grid-template-columns:1fr}
+}

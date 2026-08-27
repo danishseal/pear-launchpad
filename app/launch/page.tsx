@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import localFont from "next/font/local";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { usePeardSigner } from "@/lib/peard/signer";
@@ -16,9 +17,15 @@ import {
 } from "@/lib/peard/meteora-launch";
 import { recordAttachment } from "@/lib/peard/attachments";
 import { explorerUrl } from "@/lib/peard/config";
-import { useIcons, assetInfo, localIcon, tint } from "@/lib/peard/icons";
+import { useIcons, localIcon, tint } from "@/lib/peard/icons";
 import { ConnectButton } from "../connect-button";
-import { AppHeader, AppSidebar } from "../app-chrome";
+
+const launchFont = localFont({
+  src: "../83afe278b6a6bb3c-s.p.3a6ba036.woff2",
+  variable: "--font-launch",
+  weight: "100 900",
+  display: "swap",
+});
 
 /**
  * Launching, as a five-step wizard.
@@ -47,7 +54,7 @@ function blocker(r: Row): string | null {
 
 const ORDER: StepId[] = ["intro", "pick", "fees", "details", "review"];
 const TITLE: Record<StepId, string> = {
-  intro: "Start",
+  intro: "Intro",
   pick: "Choose an underlying",
   fees: "Fees",
   details: "Details",
@@ -80,6 +87,8 @@ function Avatar({ id, icon: fetched, size = 38 }: { id: string; icon?: string; s
 function Intro({ rows, onNext }: { rows: Row[] | null; onNext: () => void }) {
   const ready = rows !== null;
   const n = rows ? launchable(rows).length : null;
+  const orbit = useMemo(() => rows ? launchable(rows).slice(0, 8) : [], [rows]);
+  const icons = useIcons(orbit.map((row) => row.assetMint));
   return <div className="wiz-intro">
     <h1>Launch on a real underlying</h1>
     <p className="wiz-sub">Anchor a token to something that already has a price.</p>
@@ -90,32 +99,15 @@ function Intro({ rows, onNext }: { rows: Row[] | null; onNext: () => void }) {
     <p className="wiz-note">
       {n === null
         ? "Reading the registry."
-        : `${n} underlyings can carry a launch today. Your token's price, market cap and rewards all read in that thing rather than in dollars.`}
+        : `${n} underlyings are ready for a launch today.`}
     </p>
+    <div className="wiz-orbit" aria-label="Available underlyings">
+      {orbit.map((row) => <Avatar id={row.id} icon={icons[row.assetMint ?? ""]} key={row.id} size={52}/>) }
+    </div>
     <button className="wiz-cta" disabled={!ready} onClick={onNext} type="button">
       {ready ? "CHOOSE AN UNDERLYING" : "READING THE REGISTRY…"}
     </button>
   </div>;
-}
-
-/** Jupiter's reported pool depth, as something a person reads. */
-function depth(v: number | null): string {
-  if (v === null) return "…";
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
-  return `$${Math.round(v)}`;
-}
-
-/**
- * Under $50k of pool liquidity.
- *
- * Not a policy, a warning. The curve quotes in this asset, so its depth is
- * what a holder actually has to trade through, and the registry has already
- * been bitten once: SLV reported $44,055 of liquidity and moved 89.64% on a
- * $25,000 order. Reported depth and executable depth are different numbers.
- */
-function thin(v: number | null): boolean {
-  return v !== null && v < 50_000;
 }
 
 /* ------------------------------------------------------------------ step 2 */
@@ -153,12 +145,18 @@ function Pick({ rows, onPick }: { rows: Row[] | null; onPick: (r: Row) => void }
 
   // Quick pick is the deepest markets rather than a hand-picked list: the
   // ones a launch is least likely to be stranded on.
-  const quick = useMemo(() => canLaunch.filter((r) => !r.attested).slice(0, 8), [canLaunch]);
+  const quick = useMemo(() => canLaunch.filter((r) => !r.attested).slice(0, 3), [canLaunch]);
   const moved = useMemo(
     () => [...all].filter((r) => r.devBps !== 0).sort((a, b) => Math.abs(b.devBps) - Math.abs(a.devBps)).slice(0, 3),
     [all]
   );
   const browsing = !q.trim() && cat === null;
+  const themes = useMemo(() => cats.slice(0, 4).map(([category, count]) => ({
+    category,
+    count,
+    rows: all.filter((row) => row.category === category).slice(0, 3),
+  })), [all, cats]);
+  const featured = useMemo(() => canLaunch.slice(3, 9), [canLaunch]);
 
   return <div className="wiz-pick">
     <h2>Pick your underlying</h2>
@@ -168,24 +166,26 @@ function Pick({ rows, onPick }: { rows: Row[] | null; onPick: (r: Row) => void }
       <input onChange={(e) => setQ(e.target.value)} placeholder={`Search ${all.length} underlyings`} value={q}/>
     </label>
 
-    <div className="wiz-chips">
-      <button className={cat === null ? "on" : ""} onClick={() => setCat(null)} type="button">All <i>{all.length}</i></button>
-      <button className={cat === "__priced" ? "on" : ""} onClick={() => setCat(cat === "__priced" ? null : "__priced")} type="button">Priced <i>{all.filter((r) => r.price > 0).length}</i></button>
-      {cats.map(([c, n]) => <button className={cat === c ? "on" : ""} key={c} onClick={() => setCat(cat === c ? null : c)} type="button">{c} <i>{n}</i></button>)}
-    </div>
-
     {rows === null ? <p className="wiz-empty">Reading the registry…</p> : null}
 
     {browsing && quick.length > 0 ? <>
-      <div className="wiz-row-head"><b>Quick pick</b><span>A live source, not a typed one</span></div>
+      <div className="wiz-row-head"><b>Quick pick</b><span>Click to select</span></div>
       <div className="wiz-quick">{quick.map((r) => <button className="wiz-quick-card" key={r.id} onClick={() => onPick(r)} type="button">
         <Avatar id={r.id} icon={icons[r.assetMint ?? ""]}/>
         <div><b>{r.id}</b><small>{r.name}</small></div>
       </button>)}</div>
     </> : null}
 
+    {browsing && themes.length > 0 ? <>
+      <div className="wiz-row-head"><b>Themes</b><span>Browse categories</span></div>
+      <div className="wiz-themes">{themes.map((theme) => <button key={theme.category} onClick={() => setCat(theme.category)} type="button">
+        <span className="wiz-theme-icons">{theme.rows.map((row) => <Avatar id={row.id} icon={icons[row.assetMint ?? ""]} key={row.id} size={36}/>)}</span>
+        <b>{theme.category}</b><small>{theme.count} underlyings</small>
+      </button>)}</div>
+    </> : null}
+
     {browsing && moved.length > 0 ? <>
-      <div className="wiz-row-head"><b>Moved most</b><span>last accepted print</span></div>
+      <div className="wiz-row-head"><b>Trending</b><span>Latest accepted move</span></div>
       <ol className="wiz-trending">{moved.map((r, i) => <li key={r.id}>
         <button onClick={() => onPick(r)} type="button">
           <span className="wiz-rank">{i + 1}</span>
@@ -196,29 +196,24 @@ function Pick({ rows, onPick }: { rows: Row[] | null; onPick: (r: Row) => void }
       </li>)}</ol>
     </> : null}
 
-    <div className="wiz-row-head"><b>{browsing ? "All underlyings" : "Results"}</b><span>{shown.length}</span></div>
+    {browsing && featured.length > 0 ? <>
+      <div className="wiz-row-head"><b>Available now</b><span>{featured.length}</span></div>
+      <div className="wiz-featured">{featured.map((r) => <button key={r.id} onClick={() => onPick(r)} type="button">
+        <Avatar id={r.id} icon={icons[r.assetMint ?? ""]} size={44}/>
+        <div><b>{r.id}</b><small>{r.name}</small></div>
+      </button>)}</div>
+    </> : null}
+
+    <div className="wiz-row-head"><b>{q.trim() ? "Search results" : cat ? cat : "All underlyings"}</b>
+      {cat ? <button className="wiz-clear-theme" onClick={() => setCat(null)} type="button">See all</button> : <span>A–Z</span>}
+    </div>
     {rows !== null && shown.length === 0 ? <p className="wiz-empty">Nothing matches.</p> : null}
-    <div className="wiz-grid">{shown.map((r) => {
-      const a = assetInfo(r.assetMint);
+    <div className="wiz-market-list">{shown.map((r) => {
       const stop = blocker(r);
       return <button className={`wiz-card${stop ? " warn" : ""}`} key={r.id} onClick={() => onPick(r)} type="button">
-        <div className="wiz-card-head">
-          <Avatar id={r.id} icon={icons[r.assetMint ?? ""]}/>
-          <div className="wiz-card-id"><b>{r.id}</b><small>{r.name}</small></div>
-          <span className="wiz-card-cat">{r.category}</span>
-        </div>
-
-        <div className="wiz-card-why">
-          <div><span>Price</span><b>{formatPrice(r.price)} per {r.unit}</b></div>
-          <div><span>Category</span><b>{r.category}</b></div>
-          <div><span>Priced by</span><b>{r.attested ? "one source" : `${r.sources} source${r.sources === 1 ? "" : "s"}`}</b></div>
-        </div>
-
-        {stop
-          ? <div className="wiz-thin">{stop}</div>
-          : r.attested
-            ? <div className="wiz-attested">operator attested, not a market price</div>
-            : null}
+        <Avatar id={r.id} icon={icons[r.assetMint ?? ""]} size={32}/>
+        <div className="wiz-card-id"><b>{r.id}</b><small>{r.name}</small></div>
+        <span className="wiz-market-price">{stop ?? `${formatPrice(r.price)} / ${r.unit}`}</span>
       </button>;
     })}</div>
   </div>;
@@ -441,7 +436,14 @@ function LaunchWizard() {
   useEffect(() => {
     if (!rows || picked || !wanted) return;
     const hit = launchable(rows).find((r) => r.id.toUpperCase() === wanted.toUpperCase());
-    if (hit) { setPicked(hit); setStep("fees"); }
+    if (!hit) return;
+    let live = true;
+    queueMicrotask(() => {
+      if (!live) return;
+      setPicked(hit);
+      setStep("fees");
+    });
+    return () => { live = false; };
   }, [rows, picked, wanted]);
 
   // One lookup for the chosen underlying, so the fee and review screens can
@@ -452,6 +454,10 @@ function LaunchWizard() {
   const idx = Math.max(0, ORDER.indexOf(step));
   const prev = ORDER[idx - 1] ?? null;
   const next = ORDER[idx + 1] ?? null;
+  const goToStep = (target: StepId) => {
+    setStep(target);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
 
   const onImage = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -496,37 +502,42 @@ function LaunchWizard() {
     }
   };
 
-  return <main className="launch-shell app-chrome-shell">
+  return <main className={`${launchFont.variable} launch-shell`}>
     <div className="launch-halo halo-one"/><div className="launch-halo halo-two"/><div className="launch-halo halo-three"/>
-    <AppSidebar/>
     <section className="launch-main">
-      <AppHeader/>
       <div className="launch-canvas">
+      <header className="launch-focus-header">
+        <Link className="launch-wordmark" href="/">peard</Link>
+        <div className="launch-focus-actions">
+          <span className="launch-chain"><i/> Solana</span>
+          <ConnectButton/>
+        </div>
+      </header>
 
       <form className="wiz" onSubmit={onSubmit}>
         <div className="wiz-chrome">
           {prev && !result
-            ? <button className="wiz-back" onClick={() => setStep(prev)} type="button"><CaretLeft/> {TITLE[prev]}</button>
-            : <Link className="wiz-back" href="/"><CaretLeft/> Launches</Link>}
+            ? <button className="wiz-back" onClick={() => goToStep(prev)} type="button"><CaretLeft/> {TITLE[prev]}</button>
+            : <Link className="wiz-back" href="/"><CaretLeft/> Back</Link>}
           {next && !result ? <span className="wiz-next">{TITLE[next]} <CaretRight/></span> : null}
         </div>
         <div className="wiz-rail"><i style={{ width: `${((idx + 1) / ORDER.length) * 100}%` }}/></div>
 
-        {step === "intro" ? <Intro rows={rows} onNext={() => setStep("pick")}/> : null}
-        {step === "pick" ? <Pick rows={rows} onPick={(r) => { setPicked(r); setStep("fees"); }}/> : null}
-        {step === "fees" && picked ? <Fees picked={picked} icon={pickedIcon} address={signer?.publicKey.toBase58() ?? null} onNext={() => setStep("details")}/> : null}
+        {step === "intro" ? <Intro rows={rows} onNext={() => goToStep("pick")}/> : null}
+        {step === "pick" ? <Pick rows={rows} onPick={(r) => { setPicked(r); goToStep("fees"); }}/> : null}
+        {step === "fees" && picked ? <Fees picked={picked} icon={pickedIcon} address={signer?.publicKey.toBase58() ?? null} onNext={() => goToStep("details")}/> : null}
         {step === "details" ? <Details
           name={name} setName={setName} ticker={ticker} setTicker={setTicker}
           description={description} setDescription={setDescription}
           preview={preview} onImage={onImage}
           social={social} setSocial={setSocial}
           devBuy={devBuy} setDevBuy={setDevBuy}
-          onNext={() => setStep("review")}/> : null}
+          onNext={() => goToStep("review")}/> : null}
         {step === "review" && picked ? <Review
           picked={picked} icon={pickedIcon} name={name} ticker={ticker} preview={preview}
           address={signer?.publicKey.toBase58() ?? null}
           connected={Boolean(signer)} busy={busy} failure={failure} result={result}
-          onEdit={setStep}/> : null}
+          onEdit={goToStep}/> : null}
       </form>
       </div>
     </section>
@@ -539,5 +550,5 @@ function LaunchWizard() {
  * bails to client rendering silently.
  */
 export default function LaunchPage() {
-  return <Suspense fallback={<main className="launch-shell app-chrome-shell"><AppSidebar/><section className="launch-main"><AppHeader/></section></main>}><LaunchWizard/></Suspense>;
+  return <Suspense fallback={<main className="launch-shell"/>}><LaunchWizard/></Suspense>;
 }

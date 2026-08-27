@@ -42,9 +42,10 @@ function useCardMarket(mint: string) {
 }
 
 function Change({ pct }: { pct: number | null }) {
-  if (pct === null) return null;
+  if (pct === null) return <em className="zero" aria-label="24 hour change 0.00%">0.00%</em>;
+  if (pct === 0) return <em className="zero" aria-label="24 hour change 0.00%">0.00%</em>;
   const up = pct >= 0;
-  return <em className={up ? "up" : "down"}>
+  return <em className={up ? "up" : "down"} aria-label={`24 hour change ${pct.toFixed(2)}%`}>
     {up ? <ArrowUp weight="fill"/> : <ArrowDown weight="fill"/>}{Math.abs(pct).toFixed(2)}%
   </em>;
 }
@@ -63,7 +64,7 @@ function LaunchCard({ l, icon }: { l: Launch; icon?: string }) {
       <h3>{l.name || l.symbol}</h3>
       <div className="symbol">${l.symbol} <b>{l.on?.id ?? ""}</b></div>
       <div className="numbers">
-        <strong>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : unlisted ? "new" : "…"}</strong>
+        <strong>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : unlisted ? "$0" : "…"}</strong>
         <Change pct={market?.change.h24 ?? null}/>
       </div>
       <div className="creator"><span className="avatar a0"><User weight="fill"/></span>
@@ -90,7 +91,7 @@ function TopStrip({ launches, icons }: { launches: Launch[]; icons: Record<strin
   const [cardsPerPage, setCardsPerPage] = useState(2);
   const shown = launches.slice(0, 6);
   const pages = Math.max(1, Math.ceil(shown.length / cardsPerPage));
-  const step = cardsPerPage === 1 ? 315 : 712;
+  const step = cardsPerPage === 1 ? 315 : 835;
 
   useEffect(() => {
     const narrow = window.matchMedia("(max-width: 700px)");
@@ -127,10 +128,18 @@ function TopStrip({ launches, icons }: { launches: Launch[]; icons: Record<strin
 function FeatureCard({ l, icon }: { l: Launch; icon?: string }) {
   const art = l.on ? localIcon(l.on.id) ?? icon : undefined;
   const { market } = useCardMarket(l.mint);
-  return <article className="feature feature-plain" style={art ? undefined : { background: tint(l.mint) }}>
+  return <Link
+    className="feature feature-plain feature-link"
+    href={`/token/${l.mint}`}
+    style={art ? undefined : { background: tint(l.mint) }}
+  >
     {art
-      // eslint-disable-next-line @next/next/no-img-element
-      ? <img className="feature-art" alt="" src={art}/>
+      ? <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="feature-backdrop" alt="" src={art}/>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="feature-art" alt="" src={art}/>
+        </>
       : <span className="feature-initials">{(l.symbol || l.mint).slice(0, 3).toUpperCase()}</span>}
     <div className="feature-user">
       <span className="feature-user-mark">
@@ -142,14 +151,14 @@ function FeatureCard({ l, icon }: { l: Launch; icon?: string }) {
       {l.creator ? `${l.creator.slice(0, 10)}…` : "launch"}
     </div>
     <div className="feature-copy">
-      <div className="feature-token"><b>{l.name || l.symbol}</b><small>${l.symbol}<i/></small></div>
+      <div className="feature-token"><b>{l.name || l.symbol}</b><small>${l.symbol}</small></div>
       <div className="quote">
-        <b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "new"}</b>
+        <b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "$0"}</b>
         <Change pct={market?.change.h24 ?? null}/>
       </div>
-      <Link className="feature-trade" href={`/token/${l.mint}`}>Trade</Link>
+      <span className="feature-trade">Trade</span>
     </div>
-  </article>;
+  </Link>;
 }
 
 function ExploreSection({ launches, error }: { launches: Launch[] | null; error: string | null }) {
