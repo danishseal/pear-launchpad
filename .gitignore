@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# The example is not a secret and is the only record of what the one
+# variable does.
+!.env.example

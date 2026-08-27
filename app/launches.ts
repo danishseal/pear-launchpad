@@ -23,6 +23,24 @@ interface LaunchSnapshot {
 
 const SNAPSHOT_KEY = "peard.launches.snapshot.v1";
 
+/**
+ * Whether to list the pre-Meteora test launches.
+ *
+ * Off. Two markets exist on chain from before the move to Meteora, named
+ * "Launched on AMZN" and "Launched on AAPL", with no name, no symbol, no
+ * price and no pool. They were tests, and a visitor cannot tell that from a
+ * grid: they read as the two products this app has.
+ *
+ * A FLAG RATHER THAN A DELETION. The accounts are still on chain and
+ * `/account` still decodes them, so this hides them from the shop window
+ * without pretending they are gone or rotting the code that reads them.
+ *
+ * Nothing here affects a NEW launch. Those come from `allAttachments()`
+ * above, a separate branch, so a token launched through this app lists the
+ * moment it is made.
+ */
+const SHOW_LEGACY = false;
+
 function launchesFrom({ snap }: LaunchSnapshot, meta: Record<string, Meta> | null): Launch[] {
   const byId = new Map(snap.pairables.map((pairable) => [pairable.id, pairable]));
   const out: Launch[] = [];
@@ -41,7 +59,7 @@ function launchesFrom({ snap }: LaunchSnapshot, meta: Record<string, Meta> | nul
     });
   }
 
-  for (const market of snap.markets) {
+  for (const market of SHOW_LEGACY ? snap.markets : []) {
     if (out.some((launch) => launch.mint === market.tokenMint)) continue;
     const on = snap.pairables.find((pairable) => pairable.pda === market.pairable) ?? null;
     out.push({

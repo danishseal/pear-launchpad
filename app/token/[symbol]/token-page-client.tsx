@@ -10,7 +10,12 @@ import { useUnderlying, ago } from "@/lib/peard/underlying-detail";
 import { formatPrice } from "@/lib/peard/underlyings";
 import { explorerUrl } from "@/lib/peard/config";
 import { useIcons, localIcon, tint } from "@/lib/peard/icons";
-import { useMarket, usd, chartUrl } from "@/lib/peard/market";
+import { usd } from "@/lib/peard/market";
+import { useCandles, useToken } from "@/lib/peard/feed";
+import type { RangeKey } from "@/lib/peard/token-data";
+import { OFFICIAL, OFFICIAL_MINT } from "@/lib/peard/official";
+import { PriceChart } from "./price-chart";
+import { TradePanel } from "./trade-panel";
 import { attachmentFor, resolveUnderlying, type Attachment } from "@/lib/peard/attachments";
 import { AppHeader, AppSidebar } from "../../app-chrome";
 import { useLaunches } from "../../launches";
@@ -32,9 +37,11 @@ function looksLikeMint(s: string): boolean {
   return s.length >= 32;
 }
 
-function Mark({ id, mint, size }: { id: string; mint: string | null; size?: number }) {
+function Mark({ id, mint, size, src }: { id: string; mint: string | null; size?: number; src?: string | null }) {
   const icons = useIcons([mint]);
-  const icon = localIcon(id) ?? (mint ? icons[mint] : undefined);
+  // The venue's own artwork first. It is the picture holders recognise, and
+  // the registry mark is a fallback for a launch that has one.
+  const icon = src ?? localIcon(id) ?? (mint ? icons[mint] : undefined);
   return <div className="token-avatar token-mark" style={{ background: icon ? "#f4f6f4" : tint(id), width: size, height: size }}>
     {icon
       // eslint-disable-next-line @next/next/no-img-element
@@ -50,14 +57,29 @@ function LaunchView({ mint }: { mint: string }) {
   const [detailTab, setDetailTab] = useState<"about" | "holders" | "activity">("about");
   const { launches } = useLaunches();
   const launch = launches?.find((candidate) => candidate.mint === mint) ?? null;
-  const { market, loading, unlisted } = useMarket(mint);
-  const name = att?.name ?? launch?.name ?? "Launch";
-  const symbol = att?.symbol ?? launch?.symbol ?? mint.slice(0, 4);
+  // One call, whatever venue this token launched on. pump.fun answers for a
+  // pump.fun coin and Jupiter answers for a Meteora launch; the route handler
+  // picks, and nothing here has to know which.
+  const { snap, loading } = useToken(mint);
+  const [range, setRange] = useState<RangeKey>("1D");
+  const { candles, loading: candlesLoading } = useCandles(mint, range);
+
+  const isOfficial = mint === OFFICIAL_MINT;
+  const awaiting = snap?.phase === "awaiting";
+  const onCurve = snap?.phase === "curve";
+  const progress = snap?.curveProgress ?? null;
+
+  const name = snap?.name ?? att?.name ?? launch?.name ?? (isOfficial ? OFFICIAL.name : "Launch");
+  const symbol = snap?.symbol ?? att?.symbol ?? launch?.symbol ?? (isOfficial ? OFFICIAL.symbol : mint.slice(0, 4));
   const launchUnderlying = att?.underlying ?? launch?.on?.id ?? null;
-  const price = loading ? "…" : usd(market?.priceUsd ?? 0, 6);
-  const marketCap = loading ? "…" : usd(market?.marketCapUsd ?? market?.fdvUsd ?? 0);
-  const liquidity = loading ? "…" : usd(market?.liquidityUsd ?? 0);
-  const volume24h = loading ? "…" : usd(market?.volume.h24 ?? 0);
+
+  const dash = (v: number | null | undefined, f: (n: number) => string) =>
+    v === null || v === undefined ? (loading ? "…" : "—") : f(v);
+  const price = dash(snap?.priceUsd, (v) => usd(v, 6));
+  const marketCap = dash(snap?.marketCapUsd, (v) => usd(v));
+  const liquidity = onCurve && snap?.liquidityUsd == null ? "on the curve" : dash(snap?.liquidityUsd, (v) => usd(v));
+  const volume24h = dash(snap?.volume24hUsd, (v) => usd(v));
+  const h24 = snap?.change24hPct ?? null;
 
   // Local first, then the chain. A launch made against peard's own programs
   // carries its underlying in the Market account, so it is knowable on any
@@ -76,7 +98,11 @@ function LaunchView({ mint }: { mint: string }) {
   return <main className="token-shell app-chrome-shell"><AppSidebar/><div className="token-main"><AppHeader/>
     <section className="token-identity">
       <Link href="/" aria-label="Back"><CaretLeft/></Link>
-      <Mark id={under ?? launchUnderlying ?? mint} mint={detail?.p.assetMint ?? launch?.on?.assetMint ?? null}/>
+      <Mark
+        id={under ?? launchUnderlying ?? mint}
+        mint={detail?.p.assetMint ?? launch?.on?.assetMint ?? null}
+        src={snap?.image ?? (isOfficial ? "/peard.webp" : null)}
+      />
       <div className="token-identity-copy">
         <h1>{name}
           <button aria-label="Copy link" className="icon-btn" onClick={() => navigator.clipboard?.writeText(window.location.href)}><ShareNetwork/></button>
@@ -85,8 +111,10 @@ function LaunchView({ mint }: { mint: string }) {
           <button aria-label="Copy the mint" className="icon-btn" onClick={() => navigator.clipboard?.writeText(mint)}><Copy/></button>
         </p>
         <div className="token-badges">
-          <span>{market ? "Live market" : unlisted ? "Indexing" : "Loading"}</span>
-          <span>{under ? `Priced on ${under}` : "Reading underlying"}</span>
+          <span className={awaiting ? "badge-wait" : undefined}>
+            {awaiting ? "Not launched yet" : onCurve ? "On the bonding curve" : snap?.venue ? `Live on ${snap.venue}` : loading ? "Loading" : "Live market"}
+          </span>
+          {under ? <span>{`Priced on ${under}`}</span> : null}
         </div>
       </div>
     </section>
@@ -104,9 +132,9 @@ function LaunchView({ mint }: { mint: string }) {
           <div className="chart-value">
             <strong>{price}</strong>
             <span>price</span>
-            {market?.change.h24 !== null && market?.change.h24 !== undefined
-              ? <em style={{ color: market.change.h24 >= 0 ? "#7fd396" : "#d99" }}>
-                  {market.change.h24 >= 0 ? "▲" : "▼"} {Math.abs(market.change.h24).toFixed(2)}% 24h
+            {h24 !== null
+              ? <em style={{ color: h24 >= 0 ? "#7fd396" : "#dd9999" }}>
+                  {h24 >= 0 ? "▲" : "▼"} {Math.abs(h24).toFixed(2)}% 24h
                 </em>
               : null}
           </div>
@@ -114,24 +142,21 @@ function LaunchView({ mint }: { mint: string }) {
             <b>{marketCap}</b><span>MARKET CAP</span>
           </div>
 
-          {/*
-            DexScreener's own chart for the pair.
-            The registry stores one TWAP and DBC stores a current price, so
-            there is no series on chain to draw and no keyless OHLC endpoint
-            to build one from. An embedded chart is real data somebody else
-            already keeps; a line drawn here would be invented.
-          */}
-          {market?.pairAddress ? (
-            <iframe className="dex-chart" src={chartUrl(market.pairAddress)} title="Price chart" loading="lazy"/>
-          ) : (
-            <div className="detail-empty" style={{ height: 260, borderBottom: 0 }}>
-              <span>{unlisted ? "Not indexed yet" : "Loading"}</span>
-              <p>{unlisted
-                ? "A new pool takes a few minutes to appear. The chart fills in once it has traded."
-                : "Reading the market."}</p>
-            </div>
-          )}
+          <PriceChart
+            candles={candles}
+            range={range}
+            onRange={setRange}
+            state={{ loading: candlesLoading, awaiting, source: snap?.source ?? null }}
+          />
         </section>
+
+        {progress !== null && progress < 1 ? (
+          <section className="curve">
+            <div className="curve-head"><span>Bonding curve</span><b>{(progress * 100).toFixed(1)}%</b></div>
+            <div className="curve-track"><i style={{ width: `${Math.max(1, progress * 100)}%` }}/></div>
+            <p>When the curve fills, liquidity moves to an AMM pool and the token trades there instead. Nothing needs to be done for that to happen.</p>
+          </section>
+        ) : null}
 
         <section className="token-details">
           <div className="detail-tabs" role="tablist" aria-label="Token details">
@@ -151,6 +176,7 @@ function LaunchView({ mint }: { mint: string }) {
               <a href={`https://dexscreener.com/solana/${mint}`} target="_blank" rel="noopener noreferrer">DexScreener</a>
               <a href={explorerUrl("address", mint)} target="_blank" rel="noopener noreferrer">Solana Explorer</a>
               {under ? <Link href={`/token/${under.toLowerCase()}`}>{under} underlying</Link> : null}
+              {isOfficial ? <a href={OFFICIAL.url} target="_blank" rel="noopener noreferrer">pump.fun</a> : null}
             </div>
 
             <div className="creator-row"><span>Creator</span><b>
@@ -162,12 +188,12 @@ function LaunchView({ mint }: { mint: string }) {
             <h3>Stats</h3>
             <div className="stat-row stripe"><span>Starting MCAP</span><b>{launch?.legacy ? "$50K" : "$5K"}</b></div>
             <div className="stat-row"><span>Pool pairing</span><b>{under ?? "—"}</b></div>
-            <div className="stat-row stripe"><span>All-time volume</span><b>$0</b></div>
+            <div className="stat-row stripe"><span>Holders</span><b>{snap?.holders != null ? snap.holders.toLocaleString() : "—"}</b></div>
             <div className="stat-row"><span>24h volume</span><b>{volume24h}</b></div>
             <div className="stat-row stripe"><span>Total Supply</span><b>1B</b></div>
-            <div className="stat-row"><span>Created</span><b>{launch?.at ? ago(launch.at) : "—"}</b></div>
+            <div className="stat-row"><span>Created</span><b>{snap?.createdAt ? ago(snap.createdAt) : launch?.at ? ago(launch.at) : "—"}</b></div>
             <div className="stat-row stripe"><span>Market fee</span><b>{((launch?.legacy?.market.feeBps ?? 100) / 100).toFixed(2)}%</b></div>
-            <div className="stat-row"><span>Trade feeling</span><b><i className="feeling-pill">Peard</i></b></div>
+            <div className="stat-row"><span>Venue</span><b>{awaiting ? (isOfficial ? OFFICIAL.venue : "—") : snap?.venue ?? "—"}</b></div>
 
             <h3>Contract</h3>
             <div className="stat-row stripe"><span>Chain</span><b>Solana</b></div>
@@ -183,23 +209,7 @@ function LaunchView({ mint }: { mint: string }) {
         </section>
       </div>
 
-      <aside className="trade-panel">
-        <div className="perp-head"><b>Trade</b><span>{market ? market.dexId : "pending"}</span></div>
-        <div className="trade-summary">
-          <div><span>Token</span><b>${symbol}</b></div>
-          <div><span>Quote</span><b>USDC</b></div>
-          <div><span>Underlying</span><b>{under ?? "—"}</b></div>
-        </div>
-        <p className="perp-funding">
-          This token trades on a bonding curve against USDC. Buying and selling from inside peard is not wired yet.
-        </p>
-        {market?.url
-          ? <a className="buy-login" href={market.url} target="_blank" rel="noopener noreferrer"
-               style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-              Trade on DexScreener
-            </a>
-          : <button className="buy-login" disabled>Waiting for the pool to index</button>}
-      </aside>
+      <TradePanel mint={mint} symbol={symbol} tradable={!awaiting}/>
     </div>
   </div></main>;
 }
