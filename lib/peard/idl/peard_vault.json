@@ -1,0 +1,2614 @@
+{
+  "address": "6ps4NbLGcZGW1WWqrp4PsqMCozHied1QGihDzP1A5zv8",
+  "metadata": {
+    "name": "peard_vault",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "PEARD ASSETS: the reserve of real things behind a token, and what each one is worth today"
+  },
+  "docs": [
+    "The reserve of real things behind a token.",
+    "",
+    "Three programs now, and each owns exactly one question. peard owns",
+    "what a token is counted in. peard_amm owns where it trades. This owns",
+    "what is actually in the room, and what that is worth today.",
+    "",
+    "It holds NFTs. An NFT here is a deed to a specific batch of a specific",
+    "thing, and making it an instance rather than a registry row is the point:",
+    "pears bought in September and pears bought in March share a name and",
+    "nothing else. Every variable that decides value - shrink, expiry, carry,",
+    "haircut, who is holding it, what was paid - is a field on the batch.",
+    "",
+    "The core values nothing itself. It stores an appraisal, applies the same",
+    "oracle discipline peard uses on prices, and subtracts what holding the",
+    "thing has cost. How a pear lot or a graded card gets its number is an",
+    "appraiser's problem, and appraisers are per item."
+  ],
+  "instructions": [
+    {
+      "name": "attach_receipt_mint",
+      "docs": [
+        "Name the fungible receipt for this reserve. Once, and never again.",
+        "",
+        "The reserve PDA must already be the mint authority and the supply must",
+        "be zero, both checked here rather than trusted. A mint somebody else",
+        "can issue is not a receipt for anything: it is a claim on this room",
+        "that this room did not make.",
+        "",
+        "One-way for the same reason `asset_mint` is immutable in the registry.",
+        "Repointing would leave outstanding receipts claiming a room that no",
+        "longer acknowledges them, and there is no honest thing to do with",
+        "those afterwards."
+      ],
+      "discriminator": [
+        160,
+        229,
+        143,
+        48,
+        122,
+        5,
+        37,
+        196
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "receipt_mint",
+          "docs": [
+            "Checked by hand: the reserve must already be its authority, the supply",
+            "must be zero, and it must carry no freeze authority."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "burn_receipts",
+      "docs": [
+        "Hand receipts back and stop claiming that many items.",
+        "",
+        "Permissionless: burning is giving something up, and nobody needs",
+        "permission to do that. It exists as its own instruction because a",
+        "redemption is not the only reason to want out, and because the",
+        "invariant has to be restorable before `items_held` falls."
+      ],
+      "discriminator": [
+        180,
+        67,
+        33,
+        201,
+        234,
+        113,
+        61,
+        178
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "receipt_mint",
+          "writable": true
+        },
+        {
+          "name": "from",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "items",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "close_epoch",
+      "docs": [
+        "Close the epoch once every held item has been marked.",
+        "",
+        "All or nothing on purpose. A partially marked reserve is worse than",
+        "an unmarked one, because it looks current: the items somebody",
+        "bothered to crank are the ones that went up."
+      ],
+      "discriminator": [
+        13,
+        87,
+        7,
+        133,
+        109,
+        14,
+        83,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "backing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  99,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "deposit_item",
+      "docs": [
+        "Take custody of a deed and record everything about the batch.",
+        "",
+        "The opening appraisal is the cost basis, which is the only figure",
+        "nobody has to be trusted about: it is what was actually paid. Every",
+        "later number is somebody's opinion, and the breaker is what stops an",
+        "opinion moving too far in one step."
+      ],
+      "discriminator": [
+        212,
+        141,
+        59,
+        138,
+        39,
+        156,
+        39,
+        224
+      ],
+      "accounts": [
+        {
+          "name": "depositor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "appraiser"
+        },
+        {
+          "name": "custodian"
+        },
+        {
+          "name": "nft_mint"
+        },
+        {
+          "name": "item",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  116,
+                  101,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.item_seq",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "nft_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "nft_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "depositor_nft",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "kind",
+          "type": {
+            "defined": {
+              "name": "ItemKind"
+            }
+          }
+        },
+        {
+          "name": "quantity",
+          "type": "u64"
+        },
+        {
+          "name": "cost_basis_usd",
+          "type": "u64"
+        },
+        {
+          "name": "expires_ts",
+          "type": "i64"
+        },
+        {
+          "name": "rolls_into",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "carry_bps_per_day",
+          "type": "u16"
+        },
+        {
+          "name": "haircut_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "issue_receipts",
+      "docs": [
+        "Issue receipts against items actually held.",
+        "",
+        "`items` is whole items, and the cap is the invariant stated plainly:",
+        "receipts outstanding may never exceed what is in the room. Nothing",
+        "here consults an appraisal, deliberately. Value moves with the market",
+        "and the count does not, and a receipt is a claim on a THING rather",
+        "than on a number: pegging issuance to value would let a rising mark",
+        "mint claims that no crate stands behind."
+      ],
+      "discriminator": [
+        152,
+        0,
+        241,
+        136,
+        12,
+        39,
+        250,
+        229
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "receipt_mint",
+          "writable": true
+        },
+        {
+          "name": "to",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "items",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "mark_item",
+      "docs": [
+        "Bring one item's contribution to the aggregate up to date.",
+        "",
+        "Permissionless, because everything it can do is lower a number that",
+        "otherwise sits high: carry accrues, expiry arrives, an appraisal goes",
+        "stale. Nobody has an incentive to crank a reserve they are long, so",
+        "the freshness gate below is what makes it happen rather than goodwill."
+      ],
+      "discriminator": [
+        142,
+        6,
+        223,
+        128,
+        99,
+        99,
+        138,
+        44
+      ],
+      "accounts": [
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "item",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "open_reserve",
+      "discriminator": [
+        33,
+        134,
+        5,
+        144,
+        32,
+        30,
+        176,
+        192
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "docs": [
+            "SEEDED ON THE AUTHORITY AS WELL AS THE MARKET, and this is a fix.",
+            "",
+            "`market` is an instruction ARGUMENT, not an account: nothing checks",
+            "the caller's relationship to it. On the old seeds a stranger could",
+            "claim the canonical reserve and backing for any market in the",
+            "registry, name themselves custodian, and keep them: peard_vault has no",
+            "admin, no `close_reserve` and no authority transfer, so the claim was",
+            "permanent and free.",
+            "",
+            "Seeding on the authority makes a squat self-inflicted. It costs the",
+            "property that a reader could derive the address from the market",
+            "alone, which was never load-bearing: peard_perps reaches a backing",
+            "through the address pinned on its own market by `set_backing`, and",
+            "peard_amm through `pool.backing_reserve`. Both are stored, and both",
+            "are checked against the reserve's own contents rather than against a",
+            "derivation."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "backing",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  99,
+                  107,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market",
+          "type": "pubkey"
+        },
+        {
+          "name": "usd_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "registry_program",
+          "type": "pubkey"
+        },
+        {
+          "name": "max_mark_age_secs",
+          "type": "u32"
+        },
+        {
+          "name": "breaker_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "push_appraisal",
+      "docs": [
+        "What the thing is worth now, according to whoever is allowed to say.",
+        "",
+        "The discipline is lifted wholesale from peard's oracle, because it",
+        "is the same problem wearing different clothes: a step past the",
+        "breaker freezes the item rather than moving it, and a frozen item",
+        "refuses pushes so the figure cannot be walked while nobody is",
+        "counting it."
+      ],
+      "discriminator": [
+        207,
+        65,
+        44,
+        42,
+        67,
+        196,
+        237,
+        104
+      ],
+      "accounts": [
+        {
+          "name": "appraiser",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "item",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "value_usd",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "redeem_item",
+      "docs": [
+        "Hand the deed over. Somebody is taking the actual thing.",
+        "",
+        "The join to peard is a transaction, not a call. There, a holder",
+        "burns units and the request is settled; here, the deed leaves the",
+        "reserve. Bundling both in one transaction makes it atomic without",
+        "either program having to know the other exists, which is the same",
+        "seam the fee route already uses.",
+        "",
+        "Redeemed is not written off. The thing left because it was delivered,",
+        "and a reserve that cannot tell those two apart cannot tell you",
+        "whether its custodian is good for anything."
+      ],
+      "discriminator": [
+        237,
+        232,
+        119,
+        199,
+        26,
+        197,
+        2,
+        13
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "item",
+          "writable": true
+        },
+        {
+          "name": "nft_mint"
+        },
+        {
+          "name": "nft_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "nft_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "recipient_nft",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "roll_position",
+      "docs": [
+        "Unfreeze an item somebody has looked at.",
+        "Roll a dated position into the next one, in a single instruction.",
+        "",
+        "This is how a perpetual claim is built out of contracts that expire.",
+        "A futures contract tracks its underlying because delivery forces",
+        "convergence, and the price of that anchor is an expiry date. Holding",
+        "exposure past it means selling the expiring month and buying the next,",
+        "forever, which is what a commodity ETF does and what `successor` on a",
+        "pairable has always been for.",
+        "",
+        "ATOMIC, and not by preference. `receipts_issued <= items_held` is the",
+        "invariant that makes a receipt mean anything, and a roll done as a",
+        "write-off followed by a deposit would drop `items_held` below the",
+        "receipts in between and be refused. One instruction, one swap, and the",
+        "count never dips. Receipts are untouched throughout: that is the whole",
+        "point of the exercise, since the claim is perpetual and only the thing",
+        "underneath it has a date on it.",
+        "",
+        "The roll economics are recorded in USD rather than inferred. `proceeds`",
+        "is what closing the expiring position realised and `cost` is what the",
+        "replacement took, both quoted in the reserve's own dollar. When the",
+        "next month is dearer the difference is a loss that recurs every roll",
+        "and compounds, and a holder who cannot see it accumulating is the USO",
+        "holder of 2020: right about oil, eaten by the roll."
+      ],
+      "discriminator": [
+        42,
+        161,
+        126,
+        203,
+        120,
+        83,
+        208,
+        98
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "old_item",
+          "writable": true
+        },
+        {
+          "name": "successor",
+          "docs": [
+            "against `old_item.rolls_into` and against the registry pinned on the",
+            "reserve, then parsed for its expiry and its own successor."
+          ]
+        },
+        {
+          "name": "old_nft_mint"
+        },
+        {
+          "name": "old_nft_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "old_nft_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "authority_old_nft",
+          "writable": true
+        },
+        {
+          "name": "new_item",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  116,
+                  101,
+                  109
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.item_seq",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "new_nft_mint"
+        },
+        {
+          "name": "new_nft_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "new_nft_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "authority_new_nft",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "proceeds_usd",
+          "type": "u64"
+        },
+        {
+          "name": "cost_usd",
+          "type": "u64"
+        },
+        {
+          "name": "new_quantity",
+          "type": "u64"
+        },
+        {
+          "name": "expires_ts",
+          "type": "i64"
+        },
+        {
+          "name": "carry_bps_per_day",
+          "type": "u16"
+        },
+        {
+          "name": "haircut_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "set_item_frozen",
+      "discriminator": [
+        60,
+        205,
+        189,
+        224,
+        227,
+        66,
+        107,
+        117
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "item",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "frozen",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "settle_carry",
+      "docs": [
+        "Pay the custodian what storing the thing has actually cost.",
+        "",
+        "Permissionless to crank and destination-fixed: it can only ever pay",
+        "the address recorded on the item. Carry is a claim ahead of holders,",
+        "so it sits as a debt against the item's value until it is settled;",
+        "settling it lifts the value back by the amount paid, which is correct",
+        "rather than generous, because somebody put money in to clear it.",
+        "",
+        "An empty carry vault is not an error worth aborting a crank over. It",
+        "is the operator behind on the warehouse bill, and the debt staying",
+        "visible on the item is the honest outcome."
+      ],
+      "discriminator": [
+        164,
+        215,
+        155,
+        42,
+        109,
+        39,
+        189,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "item",
+          "writable": true
+        },
+        {
+          "name": "usd_mint"
+        },
+        {
+          "name": "carry_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "reserve"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "usd_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "custodian_usd",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "write_off_item",
+      "docs": [
+        "It is gone and it was not delivered.",
+        "",
+        "A pallet dropped, a crop failed, a card never arrived. Recorded as a",
+        "loss against the custodian rather than quietly netted off the value,",
+        "because the difference between \"worth less\" and \"missing\" is the",
+        "whole question of whether the custodian is good for it."
+      ],
+      "discriminator": [
+        182,
+        9,
+        61,
+        162,
+        15,
+        137,
+        22,
+        165
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "reserve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve.market",
+                "account": "Reserve"
+              },
+              {
+                "kind": "account",
+                "path": "reserve.authority",
+                "account": "Reserve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "item",
+          "writable": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Backing",
+      "discriminator": [
+        183,
+        154,
+        102,
+        51,
+        83,
+        11,
+        152,
+        65
+      ]
+    },
+    {
+      "name": "Item",
+      "discriminator": [
+        92,
+        157,
+        163,
+        130,
+        72,
+        254,
+        86,
+        216
+      ]
+    },
+    {
+      "name": "Reserve",
+      "discriminator": [
+        43,
+        242,
+        204,
+        202,
+        26,
+        247,
+        59,
+        127
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AppraisalRejected",
+      "discriminator": [
+        130,
+        175,
+        74,
+        254,
+        220,
+        111,
+        76,
+        230
+      ]
+    },
+    {
+      "name": "Appraised",
+      "discriminator": [
+        97,
+        134,
+        225,
+        3,
+        113,
+        26,
+        236,
+        159
+      ]
+    },
+    {
+      "name": "CarrySettled",
+      "discriminator": [
+        0,
+        58,
+        118,
+        195,
+        86,
+        207,
+        175,
+        96
+      ]
+    },
+    {
+      "name": "EpochClosed",
+      "discriminator": [
+        21,
+        4,
+        48,
+        56,
+        29,
+        169,
+        77,
+        42
+      ]
+    },
+    {
+      "name": "ItemDeposited",
+      "discriminator": [
+        106,
+        81,
+        189,
+        108,
+        1,
+        183,
+        78,
+        222
+      ]
+    },
+    {
+      "name": "ItemMarked",
+      "discriminator": [
+        202,
+        143,
+        36,
+        228,
+        208,
+        99,
+        177,
+        196
+      ]
+    },
+    {
+      "name": "ItemRedeemed",
+      "discriminator": [
+        157,
+        78,
+        54,
+        184,
+        179,
+        3,
+        193,
+        44
+      ]
+    },
+    {
+      "name": "ItemWrittenOff",
+      "discriminator": [
+        204,
+        248,
+        203,
+        117,
+        22,
+        105,
+        66,
+        225
+      ]
+    },
+    {
+      "name": "PositionRolled",
+      "discriminator": [
+        199,
+        155,
+        114,
+        177,
+        18,
+        3,
+        196,
+        230
+      ]
+    },
+    {
+      "name": "ReceiptMintAttached",
+      "discriminator": [
+        146,
+        189,
+        230,
+        236,
+        112,
+        52,
+        53,
+        0
+      ]
+    },
+    {
+      "name": "ReceiptsBurned",
+      "discriminator": [
+        75,
+        19,
+        161,
+        207,
+        78,
+        228,
+        246,
+        191
+      ]
+    },
+    {
+      "name": "ReceiptsIssued",
+      "discriminator": [
+        158,
+        222,
+        85,
+        35,
+        255,
+        36,
+        71,
+        164
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "unauthorized"
+    },
+    {
+      "code": 6001,
+      "name": "BadParam",
+      "msg": "parameter outside allowed range"
+    },
+    {
+      "code": 6002,
+      "name": "ZeroAmount",
+      "msg": "amount must be greater than zero"
+    },
+    {
+      "code": 6003,
+      "name": "MathOverflow",
+      "msg": "math overflow"
+    },
+    {
+      "code": 6004,
+      "name": "ItemFrozen",
+      "msg": "item is frozen"
+    },
+    {
+      "code": 6005,
+      "name": "ItemNotHeld",
+      "msg": "item is no longer held"
+    },
+    {
+      "code": 6006,
+      "name": "BadAppraisal",
+      "msg": "appraisal outside sane bounds"
+    },
+    {
+      "code": 6007,
+      "name": "EpochIncomplete",
+      "msg": "the epoch still has unmarked items"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadyMarked",
+      "msg": "item has already been marked this epoch"
+    },
+    {
+      "code": 6009,
+      "name": "ReserveStale",
+      "msg": "the reserve has not been marked recently enough to be counted"
+    },
+    {
+      "code": 6010,
+      "name": "NotAnNft",
+      "msg": "an nft is one indivisible unit and this is not one"
+    },
+    {
+      "code": 6011,
+      "name": "NothingOwed",
+      "msg": "nothing is owed on this item"
+    },
+    {
+      "code": 6012,
+      "name": "CarryVaultEmpty",
+      "msg": "the carry vault holds nothing to pay with"
+    },
+    {
+      "code": 6013,
+      "name": "CarryOutstanding",
+      "msg": "carry is still owed on this item"
+    },
+    {
+      "code": 6014,
+      "name": "ReceiptMintSet",
+      "msg": "this reserve already has a receipt mint, and it cannot be repointed"
+    },
+    {
+      "code": 6015,
+      "name": "BadReceiptMint",
+      "msg": "the reserve PDA must be the receipt mint's authority, and the supply must start at zero"
+    },
+    {
+      "code": 6016,
+      "name": "NoReceiptMint",
+      "msg": "this reserve has no receipt mint"
+    },
+    {
+      "code": 6017,
+      "name": "ReceiptsExceedItems",
+      "msg": "receipts outstanding would exceed the items held"
+    },
+    {
+      "code": 6018,
+      "name": "NotDueToRoll",
+      "msg": "the position being rolled out of is not near enough to expiry"
+    },
+    {
+      "code": 6019,
+      "name": "RollNotForward",
+      "msg": "a roll must replace the position with a later-expiring one"
+    },
+    {
+      "code": 6020,
+      "name": "RollOverdue",
+      "msg": "a held position is past expiry: roll it before issuing anything against this reserve"
+    },
+    {
+      "code": 6021,
+      "name": "NoRollTerms",
+      "msg": "this position names no successor, so it has no roll terms to honour"
+    },
+    {
+      "code": 6022,
+      "name": "WrongSuccessor",
+      "msg": "the replacement is not the successor this position names, or the registry does not own it"
+    },
+    {
+      "code": 6023,
+      "name": "SuccessorExpiryMismatch",
+      "msg": "the replacement does not expire when the successor contract says it does"
+    }
+  ],
+  "types": [
+    {
+      "name": "AppraisalRejected",
+      "docs": [
+        "The breaker tripped. Worth an event of its own: an appraiser trying to",
+        "move a figure further than the reserve allows is a fact about the",
+        "appraiser, not just about the item."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "observed",
+            "type": "u64"
+          },
+          {
+            "name": "held",
+            "type": "u64"
+          },
+          {
+            "name": "step_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Appraised",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "value_usd",
+            "type": "u64"
+          },
+          {
+            "name": "step_bps",
+            "type": "u16"
+          },
+          {
+            "name": "carry_owed_usd",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Backing",
+      "docs": [
+        "What this reserve is worth, published for anyone to read.",
+        "",
+        "Deliberately tiny and deliberately frozen. It exists so that a program",
+        "which should not depend on this one can still price the backing: it",
+        "derives the address from the market, checks the owner and the magic, and",
+        "reads six numbers. Nothing here is a pointer into peard_vault's internals,",
+        "so peard_vault can be rewritten without breaking a reader.",
+        "",
+        "`as_of_ts` is the moment an epoch last closed with EVERY item marked. A",
+        "reader that ignores it is reading a number that only ever drifts upward",
+        "of the truth."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "magic",
+            "type": "u64"
+          },
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "value_usd",
+            "docs": [
+              "Net of haircut and unpaid carry, USD e6."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "cost_basis_usd",
+            "type": "u64"
+          },
+          {
+            "name": "items",
+            "type": "u32"
+          },
+          {
+            "name": "as_of_ts",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CarrySettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "paid_usd",
+            "type": "u64"
+          },
+          {
+            "name": "still_owed_usd",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EpochClosed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "epoch",
+            "type": "u64"
+          },
+          {
+            "name": "value_usd",
+            "type": "u64"
+          },
+          {
+            "name": "items",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Item",
+      "docs": [
+        "One deed, and every variable that decides what it is worth today."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "seq",
+            "type": "u64"
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "ItemKind"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "ItemStatus"
+              }
+            }
+          },
+          {
+            "name": "nft_mint",
+            "docs": [
+              "The NFT that stands for this batch. The reserve holds it."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "appraiser",
+            "docs": [
+              "Who may appraise it. Per item, because a card grader and a produce",
+              "inspector are not the same party and should not share a key."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "custodian",
+            "docs": [
+              "Who physically has the thing and owes delivery on it."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "docs": [
+              "Units of the underlying: cartons, ounces, hours, one card."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "cost_basis_usd",
+            "docs": [
+              "Total paid, USD e6."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "acquired_ts",
+            "type": "i64"
+          },
+          {
+            "name": "rolls_into",
+            "docs": [
+              "The contract this position rolls into, or default for none.",
+              "",
+              "THE ROLL TERM, carried by the position itself rather than decided by",
+              "whoever happens to be holding the keys when the month turns. A dated",
+              "contract that names its successor cannot be rolled anywhere else: the",
+              "program checks the replacement against this address and against that",
+              "pairable's own expiry, so \"it rolls into the next month\" stops being a",
+              "promise and becomes a thing the chain enforces.",
+              "",
+              "Set at deposit and inherited on every roll from the successor's OWN",
+              "successor, so the strip walks itself forward without anybody",
+              "re-declaring it."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "expires_ts",
+            "docs": [
+              "0 means it does not expire. Past this the item is worth nothing, and",
+              "that is a cliff rather than a taper on purpose: a pear in controlled",
+              "atmosphere is fine for months and then it is not."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "carry_bps_per_day",
+            "docs": [
+              "Storage, insurance and custody, bps of appraised value per day. The",
+              "negative yield on holding real things, and the variable most likely",
+              "to be forgotten until it has quietly eaten the backing."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "haircut_bps",
+            "docs": [
+              "Taken off every appraisal, bps. A pear lot is not USDC, and a basket",
+              "that marks it as though it were will overstate coverage by exactly",
+              "the amount that matters in the moment it matters."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "appraised_usd",
+            "docs": [
+              "Latest appraisal for the whole item, USD e6, before haircut or carry."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "appraised_ts",
+            "type": "i64"
+          },
+          {
+            "name": "appraisal_count",
+            "type": "u32"
+          },
+          {
+            "name": "last_step_bps",
+            "docs": [
+              "How far the last accepted appraisal moved, bps. A receipt."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "breaker_trips",
+            "type": "u32"
+          },
+          {
+            "name": "frozen",
+            "docs": [
+              "Refuses appraisals as well as counting. Freezing and still accepting",
+              "pushes would let the value be walked to anywhere during the freeze."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "carry_owed_usd",
+            "docs": [
+              "Carry run up and not yet paid, USD e6.",
+              "",
+              "Subtracted from the item's value because it is a real claim ahead of",
+              "holders: the warehouse is owed it whether or not anybody has paid. It",
+              "falls when the custodian is settled, and the value rises to meet it,",
+              "which is correct - somebody put money in."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "carry_paid_usd",
+            "type": "u64"
+          },
+          {
+            "name": "carry_last_ts",
+            "type": "i64"
+          },
+          {
+            "name": "marked_value_usd",
+            "docs": [
+              "Contribution to `Reserve.value_usd` as of the last mark."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "marked_epoch",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemDeposited",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "seq",
+            "type": "u64"
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "ItemKind"
+              }
+            }
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u64"
+          },
+          {
+            "name": "cost_basis_usd",
+            "type": "u64"
+          },
+          {
+            "name": "expires_ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemKind",
+      "docs": [
+        "What an item is.",
+        "",
+        "Metadata, never dispatch. Nothing in this program branches on it, and",
+        "that is the whole design: \"we need to support every type\" is only",
+        "tractable if the core supports none of them specifically. A kind decides",
+        "which appraiser is credible and what a haircut means, and both of those",
+        "live outside."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "PerishableLot"
+          },
+          {
+            "name": "DurableLot"
+          },
+          {
+            "name": "Collectible"
+          },
+          {
+            "name": "Voucher"
+          },
+          {
+            "name": "Tokenized"
+          },
+          {
+            "name": "Other"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemMarked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "epoch",
+            "type": "u64"
+          },
+          {
+            "name": "was",
+            "type": "u64"
+          },
+          {
+            "name": "now_value",
+            "type": "u64"
+          },
+          {
+            "name": "carry",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemRedeemed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "nft_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "value_usd",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Held"
+          },
+          {
+            "name": "Redeemed"
+          },
+          {
+            "name": "WrittenOff"
+          },
+          {
+            "name": "Withdrawn"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ItemWrittenOff",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "item",
+            "type": "pubkey"
+          },
+          {
+            "name": "cost_basis_usd",
+            "type": "u64"
+          },
+          {
+            "name": "custodian",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PositionRolled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
+            "type": "pubkey"
+          },
+          {
+            "name": "proceeds_usd",
+            "type": "u64"
+          },
+          {
+            "name": "cost_usd",
+            "type": "u64"
+          },
+          {
+            "name": "drag_usd",
+            "docs": [
+              "Positive is the drag: what this roll cost over what it returned."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "quantity_before",
+            "docs": [
+              "The other half of the same fact, and the half a holder feels.",
+              "",
+              "Cash drag and quantity shrinkage are two ways of paying for the same",
+              "roll: top up to keep the tonnage, or take the proceeds and hold less.",
+              "Reporting only the first lets the second happen silently."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "quantity_after",
+            "type": "u64"
+          },
+          {
+            "name": "cumulative_drag_usd",
+            "docs": [
+              "And what every roll has cost, so the compounding is legible without",
+              "replaying the log."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "rolls",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReceiptMintAttached",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReceiptsBurned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "items",
+            "type": "u64"
+          },
+          {
+            "name": "outstanding",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReceiptsIssued",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "items",
+            "type": "u64"
+          },
+          {
+            "name": "outstanding",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reserve",
+      "docs": [
+        "The reserve of real things behind one market.",
+        "",
+        "It holds NFTs and nothing else. Each NFT is the deed to a specific batch",
+        "of a specific thing, and the reason to make it an NFT rather than a row",
+        "is that the variables live on the batch: pears bought in September and",
+        "pears bought in March are not the same asset, and no registry entry can",
+        "be true of both."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "docs": [
+              "The market this backs. Never read here. Provenance, and the reason a",
+              "reserve means anything at all."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "item_seq",
+            "type": "u64"
+          },
+          {
+            "name": "items_held",
+            "type": "u32"
+          },
+          {
+            "name": "value_usd",
+            "docs": [
+              "Sum of every held item's net value as of its last mark, USD e6.",
+              "",
+              "Only meaningful together with `epoch_closed_ts`. Carry and expiry",
+              "only ever push a value down, so a reserve nobody has marked is a",
+              "reserve overstating itself, which is why staleness disqualifies the",
+              "whole number rather than one item."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "cost_basis_usd",
+            "docs": [
+              "What was actually paid for everything still held, USD e6. Solvency",
+              "against cost is a different question from solvency against the mark,",
+              "and both are worth being able to ask."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "carry_accrued_usd",
+            "docs": [
+              "Storage, insurance and custody charged so far, USD e6. A real",
+              "warehouse bleeds even when nothing spoils."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "carry_paid_usd",
+            "docs": [
+              "And how much of it the custodian has actually been handed."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "usd_mint",
+            "docs": [
+              "The mint carry is settled in. Pinned, for the same reason peard",
+              "pins its dollar: \"USDC\" is a symbol anyone can mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "written_off_usd",
+            "type": "u64"
+          },
+          {
+            "name": "redeemed_usd",
+            "type": "u64"
+          },
+          {
+            "name": "epoch",
+            "docs": [
+              "Marking runs in epochs so freshness is one comparison rather than a",
+              "scan over every item."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "marked_this_epoch",
+            "type": "u32"
+          },
+          {
+            "name": "epoch_closed_ts",
+            "docs": [
+              "When the last epoch closed with every item marked. Zero until one has."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "max_mark_age_secs",
+            "docs": [
+              "Past this, the aggregate is refused rather than believed."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "breaker_bps",
+            "docs": [
+              "Ceiling on a single appraisal step, bps. Trips into a freeze."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "receipt_mint",
+            "docs": [
+              "The fungible receipt for what is in the room, or default for none.",
+              "",
+              "This is what makes a warehouse tradeable. Items are individual and a",
+              "crate is not interchangeable with a crate in another row, but a",
+              "STANDARDISED item is: that is the whole reason an exchange writes a",
+              "grade into the contract. One receipt is one held item at that grade,",
+              "so receipts are fungible where the items only nearly are, and a",
+              "fungible thing is the only thing an AMM can hold.",
+              "",
+              "The reserve PDA is the mint authority. Nobody else can issue."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "registry_program",
+            "docs": [
+              "The program whose contract specifications this warehouse honours.",
+              "",
+              "Pinned at opening and never changed, for the same reason peard_perps pins",
+              "its registry: a warehouse that could be pointed at a different notion",
+              "of \"next month\" is a warehouse whose roll terms mean nothing."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "soonest_expiry_ts",
+            "docs": [
+              "The soonest any held item expires, or 0 when nothing does.",
+              "",
+              "THE CLOCK. Without it a receipt whose item expires in a week looks",
+              "exactly like one whose item expires in a year, and the difference is",
+              "the entire risk a holder is carrying. Maintained on deposit and on",
+              "roll rather than scanned, because a program cannot walk its own items",
+              "cheaply and a number nobody can afford to read is not a warning.",
+              "",
+              "It is a floor rather than an exact minimum: a roll can only ever push",
+              "it later, so after several rolls it may name a date earlier than any",
+              "item actually has. That errs toward warning too early, which is the",
+              "direction to be wrong in."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "roll_cost_usd",
+            "docs": [
+              "What rolling has cost, USD e6, and what it has returned. Monotonic.",
+              "",
+              "THE NUMBER THAT KILLED USO. A perpetual claim built out of dated",
+              "contracts has to roll: sell the expiring month, buy the next. When the",
+              "next month is dearer the difference is a real loss, paid every roll,",
+              "and it compounds. USO's holders in 2020 were not wrong about oil, they",
+              "were eaten by the roll, and the reason they did not see it coming is",
+              "that nothing reported it.",
+              "",
+              "Two counters rather than one signed net, so a reserve cannot quietly",
+              "offset a run of losses against one good roll. The drag is",
+              "`roll_cost_usd - roll_proceeds_usd` and a holder is entitled to both",
+              "halves."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "roll_proceeds_usd",
+            "type": "u64"
+          },
+          {
+            "name": "rolls",
+            "docs": [
+              "How many times. A drag of the same size over two rolls and over fifty",
+              "are different facts about a position."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "receipts_issued",
+            "docs": [
+              "Receipts outstanding, counted in WHOLE ITEMS rather than base units.",
+              "",
+              "The invariant is `receipts_issued <= items_held`, and it is the whole",
+              "point: a receipt that outnumbers the thing it claims is a promise the",
+              "room cannot keep. Comparing in items rather than in base units keeps",
+              "the check independent of the mint's decimals, which are a display",
+              "choice and should not be able to move a solvency test."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

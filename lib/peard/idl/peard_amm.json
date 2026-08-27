@@ -1,0 +1,1585 @@
+{
+  "address": "EdAdkPJMR6wpZq2ehxubV9Cy8opDrD8XisbXNUwXYi4C",
+  "metadata": {
+    "name": "peard_amm",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "PEARD ASSETS: a bonding curve that will quote against a mint no other venue accepts"
+  },
+  "docs": [
+    "A bonding curve for the mints no other venue will quote against.",
+    "",
+    "peard owns denomination and settlement and owns no pool. This is the",
+    "pool, and the two are joined by nothing but an address: a pool's",
+    "`fee_claimer` points at a market's reward vault, fees land there, and",
+    "`sweep_fees` on the other side credits whatever turned up. No CPI in",
+    "either direction, so either program can be replaced without the other",
+    "noticing."
+  ],
+  "instructions": [
+    {
+      "name": "attach_backing",
+      "discriminator": [
+        175,
+        51,
+        240,
+        37,
+        50,
+        206,
+        38,
+        223
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve",
+          "docs": [
+            "discriminator is checked because owner and length are not a type, and",
+            "its `receipt_mint` must be this pool's quote mint."
+          ]
+        },
+        {
+          "name": "peard_vault_program",
+          "docs": [
+            "because the owner constraint above is what actually binds it."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "buy",
+      "docs": [
+        "Quote in, base out."
+      ],
+      "discriminator": [
+        102,
+        6,
+        61,
+        18,
+        1,
+        218,
+        235,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "trader",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "base_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "trader_base",
+          "writable": true
+        },
+        {
+          "name": "trader_quote",
+          "writable": true
+        },
+        {
+          "name": "base_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "quote_in",
+          "type": "u64"
+        },
+        {
+          "name": "min_base_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim_fees",
+      "docs": [
+        "Push accrued fees to whoever the pool was pointed at.",
+        "",
+        "Permissionless and destination-fixed: anyone may crank it and nobody",
+        "may redirect it. On the peard side this lands in a market's reward",
+        "vault and `sweep_fees` credits it to holders, which is the whole of",
+        "the integration between the two programs."
+      ],
+      "discriminator": [
+        82,
+        251,
+        233,
+        156,
+        12,
+        52,
+        184,
+        202
+      ],
+      "accounts": [
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "base_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "base_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "fee_destination",
+          "docs": [
+            "The claimer's ASSOCIATED token account, and only that one.",
+            "",
+            "This used to check the owner rather than the address, so that a",
+            "destination could be an ATA or not. That was too loose, and the reason",
+            "is a seam this program cannot see. When `fee_claimer` is a peard",
+            "market, that program credits holders by reading its reward vault,",
+            "which it derives as the ATA. Fees claimed into some other account the",
+            "market happens to own would satisfy the old check, arrive somewhere",
+            "real, and then be creditable by nothing and recoverable by nobody.",
+            "",
+            "The ATA is derivable by anyone from the mint and the owner, so",
+            "requiring it costs a caller nothing and removes a way to strand money",
+            "that no error would ever have reported."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "fee_claimer"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "fee_claimer",
+          "docs": [
+            "to the pool's own recorded claimer so it cannot name anyone else."
+          ]
+        },
+        {
+          "name": "base_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_pool",
+      "docs": [
+        "Open a one-sided curve.",
+        "",
+        "The creator supplies base tokens and no quote at all. The opening",
+        "price is `virtual_quote / base_amount`, and the virtual leg is never",
+        "withdrawable because it was never deposited - it exists to set the",
+        "shape of the curve, not to back it."
+      ],
+      "discriminator": [
+        233,
+        146,
+        209,
+        142,
+        207,
+        104,
+        64,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "base_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "fee_claimer",
+          "docs": [
+            "read. Pointing it at a peard market makes this a launchpad venue;",
+            "pointing it at a wallet makes it a plain AMM."
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "base_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "creator_base",
+          "writable": true
+        },
+        {
+          "name": "base_token_program",
+          "docs": [
+            "Two programs, because the launched token and the asset it is quoted",
+            "against are routinely issued by different ones. Assuming a single",
+            "program is how a pool derives a vault address that exists nowhere."
+          ]
+        },
+        {
+          "name": "quote_token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "virtual_quote",
+          "type": "u64"
+        },
+        {
+          "name": "base_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "migrate_pool",
+      "docs": [
+        "Name the warehouse standing behind this pool's quote leg. Once.",
+        "",
+        "The point is that somebody reading the POOL sees the backing, rather",
+        "than having to know a second program exists and which account in it to",
+        "look up. A backing you have to be told about is one most people never",
+        "check.",
+        "",
+        "Verified rather than trusted. The reserve is read by hand with the",
+        "peard_vault program pinned by the caller-supplied id checked against the",
+        "account's owner, its discriminator checked because owner and length",
+        "are not a type, and then the only check that makes it MEAN anything:",
+        "that reserve's own `receipt_mint` must be this pool's quote mint. A",
+        "pool cannot claim a warehouse that does not issue the token it trades.",
+        "",
+        "One way, like `fee_claimer`. A backing somebody can repoint is a story.",
+        "Grow a pool written before `backing_reserve` existed.",
+        "",
+        "The pool PDA is seeded on the base mint, so a pool can never be",
+        "re-created: without this, every pool already on chain stops",
+        "deserialising the moment the deployed program carries the larger",
+        "struct, and there is no other repair path. Mirrors peard_perps's",
+        "`migrate_market`, which exists for exactly the same reason.",
+        "",
+        "Permissionless and idempotent. `realloc` with `zero_init` leaves the",
+        "existing bytes alone and zeroes only the new tail, and zero is",
+        "`Pubkey::default()`, which is precisely \"nothing backs this pool\". A",
+        "migrated pool therefore behaves exactly as it did before."
+      ],
+      "discriminator": [
+        55,
+        170,
+        171,
+        123,
+        210,
+        69,
+        39,
+        172
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "docs": [
+            "exactly what an under-sized account cannot survive. Identity is proved",
+            "by the discriminator inside, and the program owns it by construction."
+          ],
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "sell",
+      "docs": [
+        "Base in, quote out. The fee comes out of the quote leg, always."
+      ],
+      "discriminator": [
+        51,
+        230,
+        133,
+        164,
+        1,
+        127,
+        131,
+        173
+      ],
+      "accounts": [
+        {
+          "name": "trader",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "base_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "trader_base",
+          "writable": true
+        },
+        {
+          "name": "trader_quote",
+          "writable": true
+        },
+        {
+          "name": "base_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "base_in",
+          "type": "u64"
+        },
+        {
+          "name": "min_quote_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "sync_reserves",
+      "docs": [
+        "Write down what the issuer took, without trading.",
+        "",
+        "Every swap reconciles anyway, so this exists for the case where no",
+        "one is trading: a pool that has been reached into should show it on",
+        "the chart before the next person finds out by selling into it."
+      ],
+      "discriminator": [
+        28,
+        30,
+        78,
+        31,
+        95,
+        31,
+        176,
+        244
+      ],
+      "accounts": [
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "base_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "pool.base_mint",
+                "account": "Pool"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "quote_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "pool.quote_mint",
+                "account": "Pool"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "base_token_program"
+        },
+        {
+          "name": "quote_token_program"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Pool",
+      "discriminator": [
+        241,
+        154,
+        109,
+        4,
+        17,
+        177,
+        109,
+        188
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "BackingAttached",
+      "discriminator": [
+        83,
+        79,
+        117,
+        47,
+        4,
+        247,
+        182,
+        244
+      ]
+    },
+    {
+      "name": "FeesClaimed",
+      "discriminator": [
+        22,
+        104,
+        110,
+        222,
+        38,
+        157,
+        14,
+        62
+      ]
+    },
+    {
+      "name": "PoolCreated",
+      "discriminator": [
+        202,
+        44,
+        41,
+        88,
+        104,
+        220,
+        157,
+        82
+      ]
+    },
+    {
+      "name": "Shortfall",
+      "discriminator": [
+        102,
+        83,
+        115,
+        195,
+        5,
+        147,
+        251,
+        93
+      ]
+    },
+    {
+      "name": "Swapped",
+      "discriminator": [
+        217,
+        52,
+        52,
+        83,
+        147,
+        135,
+        96,
+        109
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "unauthorized"
+    },
+    {
+      "code": 6001,
+      "name": "BadParam",
+      "msg": "parameter outside allowed range"
+    },
+    {
+      "code": 6002,
+      "name": "ZeroAmount",
+      "msg": "amount must be greater than zero"
+    },
+    {
+      "code": 6003,
+      "name": "MathOverflow",
+      "msg": "math overflow"
+    },
+    {
+      "code": 6004,
+      "name": "SlippageExceeded",
+      "msg": "output below the minimum asked for"
+    },
+    {
+      "code": 6005,
+      "name": "CurveExhausted",
+      "msg": "the curve cannot fill an order that large"
+    },
+    {
+      "code": 6006,
+      "name": "SameMint",
+      "msg": "base and quote must be different mints"
+    },
+    {
+      "code": 6007,
+      "name": "NothingToClaim",
+      "msg": "nothing has accrued to claim"
+    },
+    {
+      "code": 6008,
+      "name": "WrongMint",
+      "msg": "token account does not match the pool's mints"
+    },
+    {
+      "code": 6009,
+      "name": "WrongFeeDestination",
+      "msg": "the fee destination is not the claimer's account"
+    },
+    {
+      "code": 6010,
+      "name": "BackingSet",
+      "msg": "this pool already names a backing reserve, and it cannot be repointed"
+    },
+    {
+      "code": 6011,
+      "name": "WrongBacking",
+      "msg": "that reserve does not issue this pool's quote mint, so it does not back it"
+    }
+  ],
+  "types": [
+    {
+      "name": "BackingAttached",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "reserve",
+            "type": "pubkey"
+          },
+          {
+            "name": "receipt_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "items_held",
+            "docs": [
+              "Read at the moment of attaching, so the event is a dated snapshot of",
+              "what was behind the pool when the claim was made."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "receipts_issued",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeesClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pool",
+      "docs": [
+        "A constant-product curve with a virtual quote reserve.",
+        "",
+        "The reason this program exists is one line in Meteora's DBC:",
+        "`is_supported_quote_mint` waves through any classic SPL mint but accepts",
+        "a Token-2022 mint only when `MetadataPointer` and `TokenMetadata` are its",
+        "sole extensions. Every xStock and every tokenised metal carries a",
+        "permanent delegate and more besides, so DBC will not quote a single one",
+        "of them. This will.",
+        "",
+        "The curve itself is deliberately ordinary. What is not ordinary is that",
+        "it assumes the quote mint's issuer retains power over the tokens sitting",
+        "in its own vault, because on these assets that is simply true."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "base_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_claimer",
+            "docs": [
+              "Where quote fees are claimable to.",
+              "",
+              "Arbitrary by design and immutable once set: pointing it at a peard",
+              "market's reward vault is the entire integration between the two",
+              "programs, and it needs no CPI in either direction. Immutable because a",
+              "mutable fee route is a rug with extra steps."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "base_reserve",
+            "docs": [
+              "Base tokens still on the curve. Stored rather than measured, so a",
+              "stranger transferring tokens in cannot move the price."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "quote_reserve",
+            "docs": [
+              "Real quote tokens on the curve, excluding accrued fees."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "virtual_quote",
+            "docs": [
+              "The virtual leg. Sets the opening price at `virtual_quote /",
+              "base_reserve` and lets the pool launch one-sided, with no quote",
+              "liquidity from the creator at all."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fees_quote",
+            "docs": [
+              "Quote fees taken and not yet claimed. Sits in the quote vault, which",
+              "is why the vault's balance is `quote_reserve + fees_quote`."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fees_quote_lifetime",
+            "type": "u64"
+          },
+          {
+            "name": "volume_quote_lifetime",
+            "type": "u128"
+          },
+          {
+            "name": "swaps",
+            "type": "u64"
+          },
+          {
+            "name": "shortfall_quote_lifetime",
+            "docs": [
+              "Quote base units this pool has been short of what it booked.",
+              "",
+              "Not a rounding counter. `permanentDelegate` lets the issuer move",
+              "tokens out of this vault at will, and this records how much of that",
+              "has happened. A pool with a non-zero figure here has been reached",
+              "into, and the number belongs in front of anyone about to trade on it."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "shortfall_base_lifetime",
+            "type": "u64"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "base_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "quote_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "backing_reserve",
+            "docs": [
+              "The peard_vault reserve whose receipt this pool's quote leg IS, or",
+              "default for a pool with nothing behind it.",
+              "",
+              "ON THE POOL RATHER THAN ALONGSIDE IT, on purpose. Anyone reading this",
+              "account should be able to see what stands behind the thing they are",
+              "about to buy, without knowing that a second program exists or which",
+              "account in it to look up. A backing you have to be told about is a",
+              "backing most people will never check.",
+              "",
+              "It is a FACT rather than a claim: `attach_backing` reads the reserve",
+              "by hand and refuses unless that reserve's own `receipt_mint` is this",
+              "pool's quote mint. A pool cannot point at a warehouse that does not",
+              "issue the token it trades.",
+              "",
+              "Immutable once set, for the same reason `fee_claimer` is: a backing",
+              "somebody can repoint is a story rather than a guarantee."
+            ],
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_claimer",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_reserve",
+            "type": "u64"
+          },
+          {
+            "name": "virtual_quote",
+            "type": "u64"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shortfall",
+      "docs": [
+        "Emitted when the books were written down to meet reality. Worth watching:",
+        "on a mint with a permanent delegate this is what a clawback looks like."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote",
+            "type": "u64"
+          },
+          {
+            "name": "base",
+            "type": "u64"
+          },
+          {
+            "name": "quote_reserve",
+            "type": "u64"
+          },
+          {
+            "name": "base_reserve",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Swapped",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "trader",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_buy",
+            "type": "bool"
+          },
+          {
+            "name": "amount_in",
+            "type": "u64"
+          },
+          {
+            "name": "amount_out",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "quote_reserve",
+            "type": "u64"
+          },
+          {
+            "name": "base_reserve",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

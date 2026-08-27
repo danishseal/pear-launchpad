@@ -1,0 +1,22 @@
+{
+  "AAPL": "/icons/aapl.png",
+  "AMZN": "/icons/amzn.png",
+  "ETH": "/icons/eth.svg",
+  "GLD": "/icons/gld.png",
+  "GOOGL": "/icons/googl.png",
+  "INTC": "/icons/intc.png",
+  "META": "/icons/meta.png",
+  "MRNA": "/icons/mrna.png",
+  "MSFT": "/icons/msft.png",
+  "MSTR": "/icons/mstr.png",
+  "MU": "/icons/mu.png",
+  "NVDA": "/icons/nvda.png",
+  "PLTR": "/icons/pltr.png",
+  "QQQ": "/icons/qqq.png",
+  "SKHY": "/icons/skhy.png",
+  "SNDK": "/icons/sndk.png",
+  "SPACEX-VAL": "/icons/spacex-val.png",
+  "SPY": "/icons/spy.png",
+  "TSLA": "/icons/tsla.png",
+  "TTWO": "/icons/ttwo.png"
+}

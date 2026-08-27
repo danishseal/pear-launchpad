@@ -1,0 +1,9 @@
+{
+  "mint": "Frgfj3XfvXeCjZb82NvbFxfGN9tf7cQjkes31ar3p1nA",
+  "symbol": "dUSD",
+  "decimals": 6,
+  "cluster": "devnet",
+  "authority": "9D2d7j5yC2phSzSV5FXDiHH2CrTHQb3W3fyQ6ctXP4m3",
+  "note": "A STAND-IN, not USDC. Devnet has no USDC: both 4zMMC9sr... and Gh9ZwEmd... resolve to nothing there. Minted here so the quote leg exists at all. Anything denominated against it on devnet is denominated against a token we can print, and the UI must say so rather than showing a dollar sign.",
+  "createdAt": "2026-08-24"
+}

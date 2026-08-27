@@ -1,0 +1,4853 @@
+{
+  "address": "7uwT6YPFpAVESKHpA6fBeTh7mQNdsYXr8jSp1nkwpHqR",
+  "metadata": {
+    "name": "peard",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "PEARD ASSETS: the registry of underlyings, and the ledger that pays holders in one"
+  },
+  "instructions": [
+    {
+      "name": "claim",
+      "docs": [
+        "Claim units, settled in USDC at the current print.",
+        "",
+        "`units` of 0 claims everything owed. The payout is scaled by",
+        "[`Market::coverage`], which is capped at 1.00: a rich vault pays face",
+        "value and banks the surplus for the next holder claiming into a dear",
+        "print. A haircut burns the full units - the difference is what lifts",
+        "coverage back up for everyone else."
+      ],
+      "discriminator": [
+        62,
+        198,
+        214,
+        193,
+        213,
+        159,
+        108,
+        210
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "pairable"
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "The quote mint itself, which Token-2022 makes mandatory rather than",
+            "optional: `transfer_checked` verifies the decimals against it, and",
+            "the associated-token address depends on which token program issued",
+            "it, so neither can be inferred from the market alone."
+          ]
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner_token"
+        },
+        {
+          "name": "reward_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "owner_quote",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "units",
+          "type": "u128"
+        }
+      ]
+    },
+    {
+      "name": "convert_inbox",
+      "docs": [
+        "Turn a Native market's dollar inbox into the asset its vault holds.",
+        "",
+        "A pool pays fees in its own quote token, and no venue will quote a",
+        "bonding curve in shares of Apple, so a market whose vault holds the",
+        "real asset receives dollars it has nothing to do with. This closes",
+        "that gap, and it is deliberately not a swap: the program has no",
+        "route, no venue, and no CPI into one. It posts a standing offer",
+        "instead - deliver the asset at the oracle price less a bounty, take",
+        "the dollars - and lets anyone holding a quote decide whether that",
+        "offer is worth filling.",
+        "",
+        "The oracle appears here and still nowhere in a trading path, and",
+        "refusing to convert costs nothing: on a stale or frozen price the",
+        "dollars simply wait in the inbox until there is a price worth",
+        "converting at. Nothing is credited here either. The vault grows, and",
+        "`sweep_fees` sees it grow and credits it exactly as it credits every",
+        "other arrival, which keeps the protocol cut and the accumulator step",
+        "on one path rather than two."
+      ],
+      "discriminator": [
+        55,
+        25,
+        41,
+        71,
+        180,
+        246,
+        1,
+        207
+      ],
+      "accounts": [
+        {
+          "name": "converter",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable"
+        },
+        {
+          "name": "market",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "The quote mint itself, which Token-2022 makes mandatory rather than",
+            "optional: `transfer_checked` verifies the decimals against it, and",
+            "the associated-token address depends on which token program issued",
+            "it, so neither can be inferred from the market alone."
+          ]
+        },
+        {
+          "name": "usd_mint"
+        },
+        {
+          "name": "inbox",
+          "docs": [
+            "Where the venue pays. Distinct from the reward vault by construction:",
+            "this is the market's dollar account, and a Native market's vault is",
+            "its asset account."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "usd_token_program"
+              },
+              {
+                "kind": "account",
+                "path": "usd_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "reward_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "converter_asset",
+          "writable": true
+        },
+        {
+          "name": "converter_usd",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "usd_token_program",
+          "docs": [
+            "Separate from `token_program` on purpose. The dollar leg and the asset",
+            "leg are routinely on different token programs - USDC is classic SPL",
+            "and the assets this exists for are not - and assuming one program for",
+            "both is how a conversion silently addresses the wrong account."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "usdc_amount",
+          "type": "u64"
+        },
+        {
+          "name": "asset_in",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_market",
+      "docs": [
+        "Attach a launched token to a pairable.",
+        "",
+        "Permissionless, and deliberately incurious about the token: the mint",
+        "is already live somewhere, this only decides what its numbers are",
+        "counted in and where its fees settle."
+      ],
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "docs": [
+            "Must be the token mint's own mint authority, while it has one.",
+            "",
+            "The market PDA is seeded on the mint alone and there is no",
+            "`close_market`, so whoever calls this first owns that mint's fee route",
+            "permanently and the real issuer can never list. Nothing here checked",
+            "any relationship between the caller and the mint.",
+            "",
+            "A renounced mint (authority `None`) stays open to anybody, which is",
+            "the honest reading: there is no issuer left to squat on."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "token_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reward_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "quote_mode",
+          "type": {
+            "defined": {
+              "name": "QuoteMode"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "deposit_fees",
+      "docs": [
+        "Route trading fees in, and denominate them.",
+        "",
+        "This is the step the whole design turns on. USDC arrives; the holder",
+        "ledger is credited in *units* at the current TWAP. The vault holds",
+        "dollars, the ledger counts bottles, and that gap is the exposure.",
+        "",
+        "Permissionless because it only ever moves value inward: the fee",
+        "sweeper, the creator, or a stranger topping up the vault all take the",
+        "same path."
+      ],
+      "discriminator": [
+        13,
+        215,
+        175,
+        72,
+        53,
+        21,
+        89,
+        5
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable"
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "The quote mint itself, which Token-2022 makes mandatory rather than",
+            "optional: `transfer_checked` verifies the decimals against it, and",
+            "the associated-token address depends on which token program issued",
+            "it, so neither can be inferred from the market alone."
+          ]
+        },
+        {
+          "name": "reward_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "payer_quote",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "expire_fulfillment",
+      "docs": [
+        "Reclaim an open request the agent never settled.",
+        "",
+        "Permissionless once the TTL has elapsed, because the alternative is",
+        "that a silent agent holds a holder's units, the vault's reserved",
+        "dollars and a slice of the epoch budget indefinitely. Identical",
+        "bookkeeping to a refund; the only difference is who may call it and",
+        "when."
+      ],
+      "discriminator": [
+        97,
+        128,
+        204,
+        234,
+        22,
+        168,
+        5,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "pairable",
+          "writable": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "request",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  117,
+                  108,
+                  102,
+                  105,
+                  108,
+                  108,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "request.seq",
+                "account": "FulfillmentRequest"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "request.owner",
+                "account": "FulfillmentRequest"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "init_global",
+      "discriminator": [
+        44,
+        238,
+        77,
+        253,
+        76,
+        182,
+        192,
+        162
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "oracle_authority",
+          "type": "pubkey"
+        },
+        {
+          "name": "fulfillment_authority",
+          "type": "pubkey"
+        },
+        {
+          "name": "fee_receiver",
+          "type": "pubkey"
+        },
+        {
+          "name": "usd_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "protocol_fee_bps",
+          "type": "u16"
+        },
+        {
+          "name": "convert_bounty_bps",
+          "type": "u16"
+        },
+        {
+          "name": "default_params",
+          "type": {
+            "defined": {
+              "name": "PairableParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "open_position",
+      "docs": [
+        "Open a reward ledger for a holder. One per (market, owner), forever."
+      ],
+      "discriminator": [
+        135,
+        128,
+        47,
+        77,
+        15,
+        152,
+        240,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "push_price",
+      "docs": [
+        "Push a price, USD e6 per one unit.",
+        "",
+        "The relayer has already medianed its providers and applied its own",
+        "deviation gates; what happens here is the standing on-chain defence.",
+        "A push while frozen is refused outright, so a compromised oracle",
+        "cannot walk the TWAP breaker-step by breaker-step during a freeze and",
+        "hand governance a poisoned price at unfreeze."
+      ],
+      "discriminator": [
+        113,
+        238,
+        232,
+        235,
+        60,
+        71,
+        127,
+        203
+      ],
+      "accounts": [
+        {
+          "name": "oracle",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "value_usd",
+          "type": "u64"
+        },
+        {
+          "name": "source_count",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "register_pairable",
+      "docs": [
+        "Register a thing with a number.",
+        "",
+        "Admin-gated in v1 by design: the seed list is the marketing, and the",
+        "risk badge has to mean something before registration opens up. The",
+        "permissionless path arrives with the optimistic resolver, at which",
+        "point this instruction gains a bond rather than changing shape."
+      ],
+      "discriminator": [
+        176,
+        23,
+        77,
+        41,
+        215,
+        206,
+        187,
+        138
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  105,
+                  114,
+                  97,
+                  98,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "unit_label",
+          "type": "string"
+        },
+        {
+          "name": "resolver",
+          "type": {
+            "defined": {
+              "name": "Resolver"
+            }
+          }
+        },
+        {
+          "name": "grade",
+          "type": {
+            "defined": {
+              "name": "Grade"
+            }
+          }
+        },
+        {
+          "name": "provider_count",
+          "type": "u8"
+        },
+        {
+          "name": "asset_mint",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "expires_at",
+          "type": "i64"
+        },
+        {
+          "name": "terminal",
+          "type": {
+            "defined": {
+              "name": "Terminal"
+            }
+          }
+        },
+        {
+          "name": "successor",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "params",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "PairableParams"
+              }
+            }
+          }
+        },
+        {
+          "name": "fulfillment",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "FulfillmentConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "regrade_pairable",
+      "docs": [
+        "Move a pairable between INDEX and HARD after it is registered.",
+        "",
+        "The hole this fills: `grade` and `asset_mint` were written once by",
+        "`register_pairable` and reachable by nothing afterwards.",
+        "`update_pairable` covers params, provider count and fulfilment only,",
+        "and the PDA is seeded `[b\"pairable\", id]`, so the account cannot be",
+        "re-created either. When an asset's market died the registry file could",
+        "record it and the chain never heard, which is what happened to SLV and",
+        "TESOURO on 2026-08-25: both went on advertising HARD grade and a live",
+        "`asset_mint` to every client that reads chain rather than the file.",
+        "",
+        "Freezing is NOT the lever for this and must not be reached for.",
+        "`frozen` means the price breaker tripped, and it stops accrual, claims",
+        "and fulfilment on every market the pairable carries. The problem here",
+        "is the asset's LIQUIDITY, not its price. The number is fine and still",
+        "worth settling against; it is the venue that emptied. Freezing would",
+        "say something untrue and charge live holders for it.",
+        "",
+        "The two directions are not symmetric and the safety of this",
+        "instruction is entirely in the asymmetry.",
+        "",
+        "**DEMOTION, hard to index, is allowed with markets live.** It only",
+        "narrows: afterwards `create_market` refuses Native here, which is the",
+        "whole intent. It cannot reach a market that already exists, because a",
+        "`Market` carries its own `quote_mint` and `quote_mode` and this",
+        "instruction writes neither. `grade` and `asset_mint` are read in",
+        "exactly one place in this program, the `QuoteMode::Native` arm of",
+        "`create_market`, and on no value-moving path at all: accrual, claims,",
+        "conversion, fulfilment and the roll all read the market's own copy.",
+        "Gating demotion on \"no market exists\" would be precisely backwards,",
+        "because the demotions that matter are the ones where somebody is",
+        "already exposed, and refusing those leaves the registry permanently",
+        "unable to say that an asset went illiquid.",
+        "",
+        "**PROMOTION, index to hard, requires that no market has ever been",
+        "created on this pairable.** It widens: it makes Native markets",
+        "creatable against a mint this program has never validated and here",
+        "cannot, since the hard-tier mints are mainnet addresses that are not",
+        "accounts on the cluster the registry is seeded on. Vetting stays off",
+        "chain and by measured depth, exactly as at registration. Promotion is",
+        "also the only route by which a pairable's asset identity could ever",
+        "change: a repoint in place is refused below, but demote-then-promote",
+        "would walk around that in two transactions. `market_count == 0` closes",
+        "both at once.",
+        "",
+        "That count is a high-water mark, not a live tally. It only ever",
+        "increments and there is no `close_market`, so it cannot tell a dead",
+        "market from an open one and a pairable that has ever carried one is",
+        "never promotable again. That is the conservative side of the error and",
+        "it is chosen deliberately: an over-strict refusal leaves the narrower,",
+        "truthful badge standing, while an over-permissive promotion hands a",
+        "live market a new asset.",
+        "",
+        "`market_count` counts THIS program's markets and nothing else, which",
+        "is the right set rather than a convenient one. A peard_perps market or a",
+        "peard_tote round written on the same pairable reads the price index; neither",
+        "reads `grade` or `asset_mint`, so neither can be misled by a regrade."
+      ],
+      "discriminator": [
+        98,
+        209,
+        115,
+        234,
+        198,
+        150,
+        99,
+        36
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "grade",
+          "type": {
+            "defined": {
+              "name": "Grade"
+            }
+          }
+        },
+        {
+          "name": "asset_mint",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request_fulfillment",
+      "docs": [
+        "Burn accrued units and ask for the physical thing instead.",
+        "",
+        "No coverage haircut applies: this is a budgeted valve, so a request",
+        "either fits inside the epoch budget at face value or it is refused.",
+        "The USDC is reserved rather than moved, which keeps the refund path",
+        "from depending on the agent holding funds.",
+        "",
+        "`commitment` is a hash of the shipping payload. No address ever",
+        "touches the chain; the agent proves it holds the preimage."
+      ],
+      "discriminator": [
+        210,
+        228,
+        3,
+        86,
+        74,
+        179,
+        149,
+        81
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner_token"
+        },
+        {
+          "name": "request",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  117,
+                  108,
+                  102,
+                  105,
+                  108,
+                  108,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "market.fulfillment_seq",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "units",
+          "type": "u128"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "retire_market",
+      "docs": [
+        "Point a market at the venue its fees come from.",
+        "",
+        "Display and provenance only: the pool address is never read to settle",
+        "anything, so a creator naming the wrong one misleads a chart rather",
+        "than moving a lamport. Updatable because a DBC pool migrates to DAMM",
+        "v2 at its threshold and the address changes when it does.",
+        "Close a market that never touched value, and give the pairable back.",
+        "",
+        "`create_market` bumps `pairable.market_count` unconditionally and",
+        "nothing has ever decremented it, so a single market, including one",
+        "created by a stranger before this instruction pinned the issuer,",
+        "vetoed that pairable's promotion to `Hard` for good.",
+        "",
+        "The conditions are deliberately absolute rather than nearly so. A",
+        "market that has credited a single unit, holds a single cent, or has",
+        "one holder earning is somebody's position and is not the admin's to",
+        "close, whatever the balances happen to net to."
+      ],
+      "discriminator": [
+        68,
+        198,
+        103,
+        192,
+        149,
+        141,
+        34,
+        156
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "roll_market",
+      "docs": [
+        "Move a market from an expired pairable onto its successor.",
+        "",
+        "Permissionless: the roll is fully determined by the two pairables, so",
+        "there is nothing to decide and no reason to make holders wait on an",
+        "operator.",
+        "",
+        "The redenomination is **value-neutral at the instant it happens**.",
+        "Units scale by `old_final / new_price`, so a holder owed $10 of the",
+        "old thing is owed $10 of the new one, and coverage is untouched",
+        "because `units * price` is invariant across the change:",
+        "",
+        "owed_after = (units * old/new) * new = units * old = owed_before",
+        "",
+        "What does change is what a unit *means* from here on, which is the",
+        "whole point of a roll and the thing a UI must say out loud rather",
+        "than bury. `RolledOver` carries both prices and the factor so the",
+        "discontinuity is on the record."
+      ],
+      "discriminator": [
+        5,
+        5,
+        193,
+        56,
+        181,
+        216,
+        237,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "old_pairable"
+        },
+        {
+          "name": "new_pairable"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_authorities",
+      "discriminator": [
+        124,
+        254,
+        44,
+        240,
+        197,
+        70,
+        190,
+        107
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "admin",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "oracle_authority",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "fulfillment_authority",
+          "type": {
+            "option": "pubkey"
+          }
+        },
+        {
+          "name": "fee_receiver",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_backing_program",
+      "docs": [
+        "Pin which program's backing attestations this one will believe.",
+        "",
+        "Governance-only and global. A market creator who could name this",
+        "would be naming who vouches for their own backing, which is the same",
+        "as writing their own coverage number."
+      ],
+      "discriminator": [
+        242,
+        102,
+        140,
+        105,
+        177,
+        233,
+        208,
+        232
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "program",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_convert_bounty",
+      "docs": [
+        "Retune what a converter keeps for filling the inbox offer.",
+        "",
+        "This is the one number that decides whether anybody bothers: too low",
+        "and a Native market's fees sit in dollars forever, too high and",
+        "holders pay for the privilege of being converted. It moves because",
+        "swap costs move."
+      ],
+      "discriminator": [
+        130,
+        114,
+        161,
+        73,
+        153,
+        148,
+        255,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "convert_bounty_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "set_market_backing",
+      "docs": [
+        "Point a market at the reserve that says what backs it.",
+        "",
+        "Admin rather than creator: this decides what the coverage figure",
+        "means, and a creator naming their own attestation account would be",
+        "marking their own homework. Setting it to default detaches the",
+        "reserve, which is the honest thing to do when one is wound down."
+      ],
+      "discriminator": [
+        253,
+        132,
+        240,
+        18,
+        117,
+        139,
+        233,
+        27
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "backing",
+          "type": "pubkey"
+        },
+        {
+          "name": "max_age_secs",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "set_pairable_frozen",
+      "discriminator": [
+        183,
+        94,
+        69,
+        51,
+        82,
+        131,
+        242,
+        69
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "frozen",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "set_pool",
+      "discriminator": [
+        119,
+        30,
+        14,
+        180,
+        115,
+        225,
+        167,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "pool",
+          "type": "pubkey"
+        },
+        {
+          "name": "kind",
+          "type": {
+            "defined": {
+              "name": "PoolKind"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_protocol_fee",
+      "discriminator": [
+        173,
+        239,
+        83,
+        242,
+        136,
+        43,
+        144,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "protocol_fee_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "set_successor",
+      "discriminator": [
+        21,
+        205,
+        192,
+        121,
+        152,
+        86,
+        46,
+        77
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "successor",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_terminal",
+      "docs": [
+        "Name (or rename) the successor a dated pairable rolls onto.",
+        "",
+        "Separate from registration because next year's crop has no price",
+        "today: `PEAR-CY26` has to be registered and trading long before",
+        "`PEAR-CY27` is a thing anyone can quote.",
+        "Move `terminal` and `successor` together, which is the only safe way.",
+        "",
+        "They are a biconditional and nothing could set `terminal` at all, so a",
+        "chain that was registered rolling could never be terminated. That is",
+        "not hypothetical: the apple strip was seeded rolling from MAY into",
+        "OCTOBER, across the crop year, and no instruction in this program",
+        "could undo it.",
+        "",
+        "WHY A CHAIN HAS TO BE TERMINABLE. For a perishable the strip is not",
+        "one continuous curve. Apples harvested in the autumn are stored",
+        "through the spring and then they are gone; the October contract is NEW",
+        "CROP and the May contract is old, and old-crop fruit is not",
+        "deliverable against a new-crop contract. Exchanges enforce this by",
+        "blacking out registration over the summer and force-cancelling",
+        "receipts before it. A roll across that boundary promises delivery of",
+        "something that will not exist, so the honest end of a storage season",
+        "is settle and redeem rather than roll.",
+        "",
+        "Only while the pairable is still live. Past expiry the terminal has",
+        "already decided what happens to every market on it, and changing it",
+        "then would rewrite an outcome holders are already entitled to."
+      ],
+      "discriminator": [
+        147,
+        89,
+        154,
+        3,
+        188,
+        91,
+        46,
+        156
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "terminal",
+          "type": {
+            "defined": {
+              "name": "Terminal"
+            }
+          }
+        },
+        {
+          "name": "successor",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_usd_mint",
+      "docs": [
+        "Rotate the mint a Denominated market must quote in.",
+        "",
+        "Governance-only and deliberately separate from `set_authorities`: it",
+        "does not change who is in charge, it changes what a dollar is. Live",
+        "markets keep their own `quote_mint`, so this only affects markets",
+        "created after it."
+      ],
+      "discriminator": [
+        147,
+        79,
+        227,
+        80,
+        141,
+        17,
+        154,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "usd_mint",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "settle_fulfillment",
+      "docs": [
+        "Report a shipment outcome.",
+        "",
+        "Shipped releases the reserved USDC to the agent. Refunded returns the",
+        "units to the holder's ledger and gives the epoch budget back, so a",
+        "failed order costs the holder nothing and does not quietly consume",
+        "someone else's slot."
+      ],
+      "discriminator": [
+        227,
+        255,
+        167,
+        148,
+        117,
+        64,
+        149,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "The quote mint itself, which Token-2022 makes mandatory rather than",
+            "optional: `transfer_checked` verifies the decimals against it, and",
+            "the associated-token address depends on which token program issued",
+            "it, so neither can be inferred from the market alone."
+          ]
+        },
+        {
+          "name": "request",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  117,
+                  108,
+                  102,
+                  105,
+                  108,
+                  108,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "request.seq",
+                "account": "FulfillmentRequest"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "docs": [
+            "Credited back on a refund. Always the request's own owner."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "request.owner",
+                "account": "FulfillmentRequest"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reward_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "agent_quote",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "shipped",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "sweep_fees",
+      "docs": [
+        "Credit quote tokens that arrived in the vault by any route.",
+        "",
+        "`deposit_fees` needs a payer willing to push; this pulls whatever",
+        "turned up. That is the whole venue integration: a bonding-curve fee",
+        "claim, an AMM sweep, a treasury top-up and a stray transfer all land",
+        "in the same account, and this credits the difference between what is",
+        "there and what has been accounted for.",
+        "",
+        "Meteora's DBC sets a `fee_claimer` and collects in the quote token",
+        "only (`collect_fee_mode: 0`), so a claim deposits exactly the asset",
+        "this vault already holds - no swap, and no reason for this program to",
+        "know what a bonding curve is. The crank bundles the venue's own claim",
+        "instruction ahead of this one in the same transaction.",
+        "",
+        "Permissionless, because it can only move value toward holders."
+      ],
+      "discriminator": [
+        175,
+        225,
+        98,
+        71,
+        118,
+        66,
+        34,
+        148
+      ],
+      "accounts": [
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable"
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "The quote mint itself, which Token-2022 makes mandatory rather than",
+            "optional: `transfer_checked` verifies the decimals against it, and",
+            "the associated-token address depends on which token program issued",
+            "it, so neither can be inferred from the market alone."
+          ]
+        },
+        {
+          "name": "reward_vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "Named even though nothing here transfers: the associated-token",
+            "address depends on which token program issued the mint, so the vault",
+            "cannot be derived without it."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "sync_backing",
+      "docs": [
+        "Copy the reserve's published figure onto the market.",
+        "",
+        "Permissionless, and it reads a foreign account by hand rather than by",
+        "CPI: the reserve program is pinned by governance, the address is",
+        "pinned by the market, and the bytes carry a magic and a version so a",
+        "wrong or moved account fails loudly instead of parsing into something",
+        "plausible. Nothing is trusted except the two pins and those constants.",
+        "",
+        "The attestation carries its own `as_of`, and this stores it rather",
+        "than stamping the sync. A reserve nobody has marked in a week should",
+        "look a week old however recently somebody cranked this."
+      ],
+      "discriminator": [
+        108,
+        184,
+        10,
+        139,
+        1,
+        62,
+        189,
+        122
+      ],
+      "accounts": [
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "backing",
+          "docs": [
+            "pins and its own magic. Never deserialised by Anchor, because Anchor",
+            "would need the type and that is the dependency being avoided."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "sync_position",
+      "docs": [
+        "Accrue what is owed and re-read the holder's balance.",
+        "",
+        "Permissionless, and the asymmetry is the point. A holder's earning",
+        "balance only *rises* here, so buying more earns nothing until you",
+        "sync; but every accrual clamps against the live token account, so",
+        "selling stops earning immediately whether or not anyone cranks you.",
+        "Both directions favour the vault, and the leftover lands in",
+        "`pending_units_undistributed` rather than vanishing."
+      ],
+      "discriminator": [
+        233,
+        255,
+        186,
+        56,
+        125,
+        89,
+        29,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "position.owner",
+                "account": "Position"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner_token",
+          "docs": [
+            "The holder's own token account, read to clamp the earning balance."
+          ]
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Required only to RAISE the earning balance, omitted to lower it.",
+            "",
+            "Optional rather than mandatory so the heal stays permissionless: a",
+            "stranger must always be able to crank a seller out of the divisor,",
+            "and that is the direction that costs nobody anything."
+          ],
+          "signer": true,
+          "optional": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_pairable",
+      "discriminator": [
+        182,
+        250,
+        106,
+        61,
+        127,
+        168,
+        237,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pairable",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "PairableParams"
+              }
+            }
+          }
+        },
+        {
+          "name": "provider_count",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "fulfillment",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "FulfillmentConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "withdraw_protocol_fees",
+      "docs": [
+        "Sweep the protocol's cut. Permissionless: the destination is fixed by",
+        "`global.fee_receiver`, so there is no discretion to guard."
+      ],
+      "discriminator": [
+        11,
+        68,
+        165,
+        98,
+        18,
+        208,
+        134,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "global",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market.token_mint",
+                "account": "Market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "docs": [
+            "The quote mint itself, which Token-2022 makes mandatory rather than",
+            "optional: `transfer_checked` verifies the decimals against it, and",
+            "the associated-token address depends on which token program issued",
+            "it, so neither can be inferred from the market alone."
+          ]
+        },
+        {
+          "name": "reward_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "fee_receiver_quote",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "FulfillmentRequest",
+      "discriminator": [
+        135,
+        168,
+        111,
+        197,
+        190,
+        176,
+        114,
+        158
+      ]
+    },
+    {
+      "name": "Global",
+      "discriminator": [
+        167,
+        232,
+        232,
+        177,
+        200,
+        108,
+        114,
+        127
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    },
+    {
+      "name": "Pairable",
+      "discriminator": [
+        54,
+        107,
+        27,
+        77,
+        232,
+        136,
+        77,
+        10
+      ]
+    },
+    {
+      "name": "Position",
+      "discriminator": [
+        170,
+        188,
+        143,
+        228,
+        122,
+        64,
+        247,
+        208
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "BackingSet",
+      "discriminator": [
+        109,
+        79,
+        40,
+        140,
+        255,
+        19,
+        218,
+        229
+      ]
+    },
+    {
+      "name": "BackingSynced",
+      "discriminator": [
+        183,
+        241,
+        102,
+        79,
+        64,
+        144,
+        235,
+        78
+      ]
+    },
+    {
+      "name": "BreakerTripped",
+      "discriminator": [
+        248,
+        29,
+        234,
+        230,
+        10,
+        90,
+        65,
+        84
+      ]
+    },
+    {
+      "name": "Claimed",
+      "discriminator": [
+        217,
+        192,
+        123,
+        72,
+        108,
+        150,
+        248,
+        33
+      ]
+    },
+    {
+      "name": "FeesDeposited",
+      "discriminator": [
+        130,
+        131,
+        74,
+        238,
+        201,
+        54,
+        205,
+        192
+      ]
+    },
+    {
+      "name": "FulfillmentRequested",
+      "discriminator": [
+        148,
+        19,
+        219,
+        42,
+        16,
+        66,
+        138,
+        73
+      ]
+    },
+    {
+      "name": "FulfillmentSettled",
+      "discriminator": [
+        162,
+        94,
+        27,
+        10,
+        123,
+        8,
+        243,
+        182
+      ]
+    },
+    {
+      "name": "InboxConverted",
+      "discriminator": [
+        167,
+        25,
+        51,
+        62,
+        60,
+        59,
+        167,
+        246
+      ]
+    },
+    {
+      "name": "MarketCreated",
+      "discriminator": [
+        88,
+        184,
+        130,
+        231,
+        226,
+        84,
+        6,
+        58
+      ]
+    },
+    {
+      "name": "MarketRetired",
+      "discriminator": [
+        147,
+        33,
+        228,
+        193,
+        27,
+        208,
+        83,
+        214
+      ]
+    },
+    {
+      "name": "PairableRegistered",
+      "discriminator": [
+        85,
+        73,
+        172,
+        224,
+        112,
+        25,
+        210,
+        136
+      ]
+    },
+    {
+      "name": "PairableRegraded",
+      "discriminator": [
+        152,
+        41,
+        96,
+        27,
+        186,
+        69,
+        88,
+        233
+      ]
+    },
+    {
+      "name": "PoolSet",
+      "discriminator": [
+        135,
+        203,
+        185,
+        106,
+        113,
+        87,
+        177,
+        32
+      ]
+    },
+    {
+      "name": "PositionSynced",
+      "discriminator": [
+        164,
+        169,
+        80,
+        175,
+        213,
+        34,
+        190,
+        86
+      ]
+    },
+    {
+      "name": "PricePushed",
+      "discriminator": [
+        82,
+        163,
+        38,
+        13,
+        83,
+        94,
+        115,
+        118
+      ]
+    },
+    {
+      "name": "RolledOver",
+      "discriminator": [
+        46,
+        173,
+        32,
+        216,
+        228,
+        119,
+        39,
+        117
+      ]
+    },
+    {
+      "name": "TerminalSet",
+      "discriminator": [
+        117,
+        217,
+        180,
+        218,
+        25,
+        171,
+        120,
+        172
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "unauthorized"
+    },
+    {
+      "code": 6001,
+      "name": "Frozen",
+      "msg": "pairable is frozen"
+    },
+    {
+      "code": 6002,
+      "name": "PushTooSoon",
+      "msg": "oracle push too soon after previous push"
+    },
+    {
+      "code": 6003,
+      "name": "BadPrice",
+      "msg": "price observation outside sane bounds"
+    },
+    {
+      "code": 6004,
+      "name": "NoPrice",
+      "msg": "no price available yet"
+    },
+    {
+      "code": 6005,
+      "name": "PriceStale",
+      "msg": "price is stale"
+    },
+    {
+      "code": 6006,
+      "name": "ZeroAmount",
+      "msg": "amount must be greater than zero"
+    },
+    {
+      "code": 6007,
+      "name": "BadIdentifier",
+      "msg": "identifier is empty or too long"
+    },
+    {
+      "code": 6008,
+      "name": "BadParam",
+      "msg": "parameter outside allowed range"
+    },
+    {
+      "code": 6009,
+      "name": "MathOverflow",
+      "msg": "math overflow"
+    },
+    {
+      "code": 6010,
+      "name": "NothingToClaim",
+      "msg": "nothing accrued to claim"
+    },
+    {
+      "code": 6011,
+      "name": "NothingToSweep",
+      "msg": "vault holds nothing unaccounted to sweep"
+    },
+    {
+      "code": 6012,
+      "name": "ClaimTooLarge",
+      "msg": "claim exceeds units owed"
+    },
+    {
+      "code": 6013,
+      "name": "InsufficientVault",
+      "msg": "reward vault cannot cover this payout"
+    },
+    {
+      "code": 6014,
+      "name": "WrongTokenAccount",
+      "msg": "token account does not match the position owner or market mint"
+    },
+    {
+      "code": 6015,
+      "name": "WrongQuoteMint",
+      "msg": "market quote mint does not match the vault"
+    },
+    {
+      "code": 6016,
+      "name": "FulfillmentDisabled",
+      "msg": "fulfillment is not enabled for this pairable"
+    },
+    {
+      "code": 6017,
+      "name": "RequestTooLarge",
+      "msg": "request exceeds the per-request ceiling"
+    },
+    {
+      "code": 6018,
+      "name": "BudgetExhausted",
+      "msg": "epoch fulfillment budget exhausted"
+    },
+    {
+      "code": 6019,
+      "name": "NotRequested",
+      "msg": "fulfillment request is not in the requested state"
+    },
+    {
+      "code": 6020,
+      "name": "GradeUnsupported",
+      "msg": "soft-grade pairables are not supported yet"
+    },
+    {
+      "code": 6021,
+      "name": "GradeAssetMismatch",
+      "msg": "hard grade requires an asset mint, and an asset mint requires hard grade"
+    },
+    {
+      "code": 6022,
+      "name": "WrongAssetMint",
+      "msg": "native quote mode requires the pairable's own asset mint"
+    },
+    {
+      "code": 6023,
+      "name": "NativeNeedsHardGrade",
+      "msg": "native quote mode requires a hard-grade pairable"
+    },
+    {
+      "code": 6024,
+      "name": "WrongUsdMint",
+      "msg": "denominated markets must quote in the configured dollar mint"
+    },
+    {
+      "code": 6025,
+      "name": "FulfillmentNeedsDenominated",
+      "msg": "fulfillment is only available on denominated markets"
+    },
+    {
+      "code": 6026,
+      "name": "RequestTooSmall",
+      "msg": "request is below the minimum worth shipping"
+    },
+    {
+      "code": 6027,
+      "name": "RequestNotExpired",
+      "msg": "request has not reached its expiry yet"
+    },
+    {
+      "code": 6028,
+      "name": "PairableExpired",
+      "msg": "pairable has expired and no longer takes pushes"
+    },
+    {
+      "code": 6029,
+      "name": "PairableNotExpired",
+      "msg": "pairable has not expired yet"
+    },
+    {
+      "code": 6030,
+      "name": "TerminalIsSettle",
+      "msg": "terminal policy is settle, so there is nothing to roll onto"
+    },
+    {
+      "code": 6031,
+      "name": "SuccessorMismatch",
+      "msg": "roll terminal requires a successor, and a successor requires roll"
+    },
+    {
+      "code": 6032,
+      "name": "WrongSuccessor",
+      "msg": "successor pairable does not match the one registered"
+    },
+    {
+      "code": 6033,
+      "name": "SuccessorNotLive",
+      "msg": "successor is not live enough to roll onto"
+    },
+    {
+      "code": 6034,
+      "name": "RollFactorInsane",
+      "msg": "roll factor is outside the sane band; needs governance"
+    },
+    {
+      "code": 6035,
+      "name": "WrongBacking",
+      "msg": "backing account is not the one this market names, or is not a backing account"
+    },
+    {
+      "code": 6036,
+      "name": "ConvertNeedsNative",
+      "msg": "inbox conversion only applies to native markets"
+    },
+    {
+      "code": 6037,
+      "name": "ConvertDust",
+      "msg": "conversion is too small to price without rounding to nothing"
+    },
+    {
+      "code": 6038,
+      "name": "InboxTooSmall",
+      "msg": "inbox does not hold that much"
+    },
+    {
+      "code": 6039,
+      "name": "ConvertShortfall",
+      "msg": "the vault received less asset than the offer demands"
+    },
+    {
+      "code": 6040,
+      "name": "GradeUnchanged",
+      "msg": "grade is already that; this instruction moves a grade, it does not repoint an asset mint"
+    },
+    {
+      "code": 6041,
+      "name": "PairableHasMarkets",
+      "msg": "a pairable that has ever carried a market cannot be promoted to hard grade"
+    },
+    {
+      "code": 6042,
+      "name": "MarketInUse",
+      "msg": "this market has held value, so it is not the admin's to close"
+    }
+  ],
+  "types": [
+    {
+      "name": "BackingSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "backing",
+            "type": "pubkey"
+          },
+          {
+            "name": "max_age_secs",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BackingSynced",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "value_usd",
+            "type": "u64"
+          },
+          {
+            "name": "as_of",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BreakerTripped",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "observed",
+            "type": "u64"
+          },
+          {
+            "name": "twap",
+            "type": "u64"
+          },
+          {
+            "name": "dev_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Claimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "units",
+            "type": "u128"
+          },
+          {
+            "name": "usdc",
+            "type": "u64"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "coverage",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Delivery",
+      "docs": [
+        "How the thing reaches the holder.",
+        "",
+        "A Big Mac cannot be posted - it is a hot prepared item with a ten minute",
+        "quality life - and neither can a gallon of petrol. For those the honest",
+        "deliverable is a claim on the good rather than the good, which is a",
+        "different promise and wants a different ceiling, floor and TTL. Saying",
+        "which on chain keeps the UI from implying a parcel is coming."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Ship"
+          },
+          {
+            "name": "Voucher"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeesDeposited",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc",
+            "type": "u64"
+          },
+          {
+            "name": "protocol_cut",
+            "type": "u64"
+          },
+          {
+            "name": "units",
+            "type": "u128"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FulfillmentConfig",
+      "docs": [
+        "The burn-to-ship valve. A budget, not an obligation: it can only ever",
+        "spend from the reward vault's own USDC, and only up to `epoch_budget_usd`",
+        "per epoch, so a run on it degrades into a queue rather than a drain."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "enabled",
+            "type": "bool"
+          },
+          {
+            "name": "delivery",
+            "type": {
+              "defined": {
+                "name": "Delivery"
+              }
+            }
+          },
+          {
+            "name": "epoch_budget_usd",
+            "docs": [
+              "Spend ceiling per epoch, USD e6."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "epoch_secs",
+            "type": "u32"
+          },
+          {
+            "name": "max_request_usd",
+            "docs": [
+              "Largest single request the valve will quote, USD e6. Bounds the blast",
+              "radius of a bad print on the fulfilment path specifically."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "min_request_usd",
+            "docs": [
+              "Smallest request worth shipping, USD e6.",
+              "",
+              "A ceiling alone is not enough. Produce moves by the carton and",
+              "shipping one pear costs several times the pear, so without a floor",
+              "every request is economically absurd and the agent eats the",
+              "difference on each one."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "request_ttl_secs",
+            "docs": [
+              "How long the agent has before anyone may expire an open request.",
+              "",
+              "Without this an unsettled request holds its reserved dollars and its",
+              "slice of the epoch budget hostage forever if the agent goes dark.",
+              "Perishables make it worse: \"we will ship when they are in season\" is",
+              "indistinguishable from never."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "epoch_start_ts",
+            "type": "i64"
+          },
+          {
+            "name": "epoch_spent_usd",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FulfillmentRequest",
+      "docs": [
+        "A burn-to-ship request. The chain records the burn, the budget draw, and",
+        "a commitment to the shipping payload; an off-chain agent does the rest",
+        "and reports back."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "seq",
+            "type": "u64"
+          },
+          {
+            "name": "units",
+            "docs": [
+              "Units-e9 burned from the owner's ledger."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "quoted_usd",
+            "docs": [
+              "USD e6 charged against the epoch budget at request time."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "commitment",
+            "docs": [
+              "Hash of the off-chain shipping payload. No address ever touches the",
+              "chain; the agent proves it holds the preimage."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "FulfillmentStatus"
+              }
+            }
+          },
+          {
+            "name": "created_ts",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FulfillmentRequested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "seq",
+            "type": "u64"
+          },
+          {
+            "name": "units",
+            "type": "u128"
+          },
+          {
+            "name": "quoted_usd",
+            "type": "u64"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FulfillmentSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "seq",
+            "type": "u64"
+          },
+          {
+            "name": "shipped",
+            "type": "bool"
+          },
+          {
+            "name": "units",
+            "type": "u128"
+          },
+          {
+            "name": "quoted_usd",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FulfillmentStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Requested"
+          },
+          {
+            "name": "Shipped"
+          },
+          {
+            "name": "Refunded"
+          },
+          {
+            "name": "Expired"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Global",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "fulfillment_authority",
+            "docs": [
+              "Signs shipment outcomes for the fulfilment valve."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_receiver",
+            "docs": [
+              "Where the protocol's cut of deposited fees is withdrawable to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "usd_mint",
+            "docs": [
+              "The one mint a Denominated market may quote in. Pinned rather than",
+              "assumed: \"USDC\" is a symbol anyone can mint, and a market quoted in a",
+              "lookalike would price correctly and pay out in confetti."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "backing_program",
+            "docs": [
+              "The program whose backing attestations this one will read.",
+              "",
+              "Pinned by governance rather than named per market, because a market",
+              "creator choosing which program vouches for their own backing is a",
+              "market creator writing their own coverage number."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "protocol_fee_bps",
+            "docs": [
+              "Protocol cut of every fee deposit, bps. The rest goes to holders."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "convert_bounty_bps",
+            "docs": [
+              "What a converter keeps for turning a Native market's USDC fee inbox",
+              "into the asset its vault holds, bps off the oracle price. One knob",
+              "for the whole protocol rather than one per market: a per-market",
+              "setting is a per-market way to get it wrong, and the number only has",
+              "to beat a swap fee."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "default_params",
+            "type": {
+              "defined": {
+                "name": "PairableParams"
+              }
+            }
+          },
+          {
+            "name": "pairable_count",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Grade",
+      "docs": [
+        "What the quote actually is, which fixes what a holder can be owed."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Hard"
+          },
+          {
+            "name": "Soft"
+          },
+          {
+            "name": "Index"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InboxConverted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "converter",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc",
+            "type": "u64"
+          },
+          {
+            "name": "asset",
+            "type": "u64"
+          },
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "bounty_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "docs": [
+        "One launched token quoted against one pairable.",
+        "",
+        "The market holds no opinion about where the token trades. There is no",
+        "AMM here and no oracle in any swap path: the pool is an ordinary",
+        "external USDC pool that has never heard of the pairable. Everything in",
+        "this account is denomination and settlement."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "token_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "docs": [
+              "USDC. Named rather than assumed so devnet and mainnet differ by",
+              "config instead of by code."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "docs": [
+              "The pool fee that gets routed here, bps. Informational: this program",
+              "never collects it, it only receives deposits."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "quote_mode",
+            "type": {
+              "defined": {
+                "name": "QuoteMode"
+              }
+            }
+          },
+          {
+            "name": "pool",
+            "docs": [
+              "The venue whose fees land in this vault. Display and provenance only."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pool_kind",
+            "type": {
+              "defined": {
+                "name": "PoolKind"
+              }
+            }
+          },
+          {
+            "name": "backing",
+            "docs": [
+              "The published attestation of what real things back this market.",
+              "Default means none, and none is a market backed by its vault alone."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "backing_value_usd",
+            "docs": [
+              "Last synced attestation, USD e6, and when the reserve behind it was",
+              "last known to be complete. Cached so that every other instruction can",
+              "see it without carrying a foreign account around."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "backing_as_of",
+            "type": "i64"
+          },
+          {
+            "name": "backing_max_age_secs",
+            "docs": [
+              "Past this, a synced figure stops counting. Backing only ever drifts",
+              "upward of the truth when nobody is marking it."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "quote_decimals",
+            "docs": [
+              "Decimals of `quote_mint`. Cached because every accrual and claim",
+              "scales by it, and re-reading the mint on each would be a wasted",
+              "account per instruction."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "acc_units_per_token",
+            "docs": [
+              "Cumulative units-e9 per token base unit, ACC_ONE scaled."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "total_earning_balance",
+            "docs": [
+              "Sum of every position's `earning_balance`. The accumulator's divisor."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "units_outstanding",
+            "docs": [
+              "Units-e9 accrued to positions and not yet claimed or shipped. Equals",
+              "the sum of every `Position.units_owed` exactly, which is what makes",
+              "the coverage ratio a real number rather than an estimate."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "roll_index",
+            "docs": [
+              "Cumulative roll factor, ROLL_ONE scaled.",
+              "",
+              "One number reprices every position, exactly as floorlaunch's",
+              "`funding_index` reprices every CDP: positions carry a snapshot and are",
+              "brought forward lazily on next touch, so a roll is O(1) rather than a",
+              "walk over every holder."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "roll_count",
+            "type": "u32"
+          },
+          {
+            "name": "pending_units_undistributed",
+            "docs": [
+              "Units-e9 that arrived with no one earning, plus the truncation dust",
+              "from every accumulator step. Rolled into the next distribution rather",
+              "than written off, so nothing silently leaks out of the ledger."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "vault_usdc",
+            "docs": [
+              "Mirror of the reward vault's USDC balance, tracked by field so a",
+              "direct transfer into the ATA cannot silently reprice coverage."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fulfillment_reserved_usdc",
+            "docs": [
+              "USDC inside the vault already earmarked for open fulfilment",
+              "requests. Excluded from coverage and from claims: a bottle that has",
+              "been promised is not buffer."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "protocol_fees_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "units_credited_lifetime",
+            "type": "u128"
+          },
+          {
+            "name": "units_claimed_lifetime",
+            "type": "u128"
+          },
+          {
+            "name": "units_fulfilled_lifetime",
+            "type": "u128"
+          },
+          {
+            "name": "fulfillment_seq",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "token_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mode",
+            "type": {
+              "defined": {
+                "name": "QuoteMode"
+              }
+            }
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarketRetired",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "remaining",
+            "docs": [
+              "The pairable's remaining market count, which is what gates a regrade."
+            ],
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pairable",
+      "docs": [
+        "A thing with a number. The registry of these, not the launchpad, is the",
+        "durable asset here."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "docs": [
+              "ASCII, right-padded with zeroes. Doubles as the PDA seed, so it is",
+              "the canonical name of the thing: `COKE-20OZ`, `XAU-OZT`, `EGGS-DOZ`."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "unit_label",
+            "docs": [
+              "What one unit is called in the UI: `bottle`, `oz t`, `doz`."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "resolver",
+            "type": {
+              "defined": {
+                "name": "Resolver"
+              }
+            }
+          },
+          {
+            "name": "grade",
+            "type": {
+              "defined": {
+                "name": "Grade"
+              }
+            }
+          },
+          {
+            "name": "params",
+            "type": {
+              "defined": {
+                "name": "PairableParams"
+              }
+            }
+          },
+          {
+            "name": "price_twap",
+            "docs": [
+              "USD e6 per one unit, EMA-smoothed. This is the number everything",
+              "else in the program divides by."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "price_last_raw",
+            "type": "u64"
+          },
+          {
+            "name": "price_last_ts",
+            "type": "i64"
+          },
+          {
+            "name": "frozen",
+            "docs": [
+              "Set by the breaker or by governance. Blocks pushes (so a frozen",
+              "price cannot be walked) and blocks accrual, claims, and fulfilment."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "provider_count",
+            "docs": [
+              "How many independent sources the relayer is *configured* to median.",
+              "A claim about setup, and only as true as whoever registered it."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "last_source_count",
+            "docs": [
+              "How many sources actually agreed on the most recent accepted push.",
+              "",
+              "The configured count above is an assertion in a JSON file and drifts",
+              "from the code the moment anyone edits either. This one is written by",
+              "the program from what the relayer passed with the price, so the badge",
+              "stops being a promise and becomes a record. When it sits below",
+              "`provider_count`, sources are down and the UI can say so."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "push_count",
+            "type": "u64"
+          },
+          {
+            "name": "breaker_trips",
+            "type": "u32"
+          },
+          {
+            "name": "last_dev_bps",
+            "docs": [
+              "Deviation of the last accepted push from the TWAP, bps."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "expires_at",
+            "docs": [
+              "Unix time this pairable stops taking pushes. 0 means perpetual.",
+              "",
+              "Dated pairables are the ones whose *definition* runs out rather than",
+              "whose feed goes quiet: a futures contract month, a crop year, a",
+              "valuation \"as of\" a particular tender."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "terminal",
+            "type": {
+              "defined": {
+                "name": "Terminal"
+              }
+            }
+          },
+          {
+            "name": "successor",
+            "docs": [
+              "The pairable that takes over at expiry. Set iff `terminal` is `Roll`.",
+              "Not required to exist yet at registration: next year's crop has no",
+              "price today, and `roll_market` is where it is checked for real."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "asset_mint",
+            "docs": [
+              "The tokenized version of this thing, if a liquid one exists on chain.",
+              "`Pubkey::default()` means none, and the program holds the invariant",
+              "that HARD grade and a set asset mint imply each other - a grade badge",
+              "promising redemption is only issuable against a mint that exists.",
+              "",
+              "Vetting is off chain and by *liquidity*, never by symbol: at the time",
+              "of writing there are a dozen mints called SPYx and only one of them",
+              "has two million dollars behind it."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fulfillment",
+            "type": {
+              "defined": {
+                "name": "FulfillmentConfig"
+              }
+            }
+          },
+          {
+            "name": "market_count",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PairableParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "twap_window_secs",
+            "docs": [
+              "Window for the price TWAP (EMA weighting), seconds."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "min_push_interval_secs",
+            "docs": [
+              "Minimum seconds between oracle pushes."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "breaker_bps",
+            "docs": [
+              "A push deviating from the TWAP by more than this freezes the pairable",
+              "instead of moving it."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "max_price_age_secs",
+            "docs": [
+              "Price older than this blocks accrual, claims, and fulfilment. Never",
+              "blocks trading, because trading does not read this program."
+            ],
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PairableRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "unit_label",
+            "type": "string"
+          },
+          {
+            "name": "resolver",
+            "type": {
+              "defined": {
+                "name": "Resolver"
+              }
+            }
+          },
+          {
+            "name": "grade",
+            "type": {
+              "defined": {
+                "name": "Grade"
+              }
+            }
+          },
+          {
+            "name": "asset_mint",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PairableRegraded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "from",
+            "type": {
+              "defined": {
+                "name": "Grade"
+              }
+            }
+          },
+          {
+            "name": "to",
+            "type": {
+              "defined": {
+                "name": "Grade"
+              }
+            }
+          },
+          {
+            "name": "asset_mint",
+            "docs": [
+              "The mint after the move: the new one on a promotion, and",
+              "`Pubkey::default()` on a demotion, which is what withdraws the claim."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "market_count",
+            "docs": [
+              "Markets this program already carries on the pairable. Nonzero here",
+              "means a demotion landed under live markets, which is legal and worth",
+              "being able to find later."
+            ],
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolKind",
+      "docs": [
+        "Which venue a market's fees come from, so a reader knows how to decode",
+        "the pool account. Never read to settle anything."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "None"
+          },
+          {
+            "name": "Dbc"
+          },
+          {
+            "name": "DammV2"
+          },
+          {
+            "name": "PeardAmm"
+          },
+          {
+            "name": "Other"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "kind",
+            "type": {
+              "defined": {
+                "name": "PoolKind"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Position",
+      "docs": [
+        "A holder's reward ledger.",
+        "",
+        "`earning_balance` only rises when the owner syncs, and every accrual",
+        "clamps it against the live token account. So buying more earns nothing",
+        "until you sync, and selling stops earning immediately whether or not",
+        "anyone cranks you. The asymmetry is deliberate and always favours the",
+        "vault."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "earning_balance",
+            "type": "u64"
+          },
+          {
+            "name": "acc_snapshot",
+            "type": "u128"
+          },
+          {
+            "name": "units_owed",
+            "docs": [
+              "Units-e9 owed to this holder, already accrued."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "units_claimed_lifetime",
+            "type": "u128"
+          },
+          {
+            "name": "usdc_claimed_lifetime",
+            "type": "u64"
+          },
+          {
+            "name": "roll_snapshot",
+            "docs": [
+              "The market's `roll_index` when this position was last brought",
+              "forward. Any gap is applied to both `units_owed` and `acc_snapshot`."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PositionSynced",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "earning_balance",
+            "type": "u64"
+          },
+          {
+            "name": "units_owed",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PricePushed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "raw",
+            "type": "u64"
+          },
+          {
+            "name": "twap",
+            "type": "u64"
+          },
+          {
+            "name": "sources",
+            "type": "u8"
+          },
+          {
+            "name": "ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "QuoteMode",
+      "docs": [
+        "What the reward vault actually holds, which decides whether settlement",
+        "consults a price at all."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Denominated"
+          },
+          {
+            "name": "Native"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Resolver",
+      "docs": [
+        "How a pairable's number gets on chain. This is metadata rather than",
+        "dispatch: every resolver funnels into the same `push_price`, and the",
+        "difference lives in the relayer. What it changes on chain is the risk",
+        "badge and which defaults a pairable is allowed to carry."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "PushFeed"
+          },
+          {
+            "name": "Http"
+          },
+          {
+            "name": "OnChain"
+          },
+          {
+            "name": "Optimistic"
+          },
+          {
+            "name": "Pinned"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RolledOver",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
+            "type": "pubkey"
+          },
+          {
+            "name": "final_price",
+            "type": "u64"
+          },
+          {
+            "name": "new_price",
+            "type": "u64"
+          },
+          {
+            "name": "factor",
+            "type": "u128"
+          },
+          {
+            "name": "units_outstanding",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Terminal",
+      "docs": [
+        "What happens when a dated pairable reaches its expiry.",
+        "",
+        "The governing rule for both: **expiry never breaks a market.** Pushes stop,",
+        "so the last TWAP becomes the final print by construction, and accrual,",
+        "claims, coverage and fulfilment all keep working against it. A settled",
+        "market simply degrades into a fixed-conversion dollar market wearing a",
+        "historical label. Nothing is stuck and nothing is lost."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Settle"
+          },
+          {
+            "name": "Roll"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TerminalSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pairable",
+            "type": "pubkey"
+          },
+          {
+            "name": "was",
+            "type": {
+              "defined": {
+                "name": "Terminal"
+              }
+            }
+          },
+          {
+            "name": "now",
+            "type": {
+              "defined": {
+                "name": "Terminal"
+              }
+            }
+          },
+          {
+            "name": "successor",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}

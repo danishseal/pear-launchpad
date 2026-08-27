@@ -1,0 +1,18 @@
+var _sentryDebugIds,_sentryDebugIdIdentifier;void 0===_sentryDebugIds&&(_sentryDebugIds={});try{var stack=(new Error).stack;stack&&(_sentryDebugIds[stack]="1b45c1d6-331e-445b-a855-c534c610d8d4",_sentryDebugIdIdentifier="sentry-dbid-1b45c1d6-331e-445b-a855-c534c610d8d4")}catch(e){}
+var SENTRY_RELEASE;SENTRY_RELEASE={name: "Feel.cash", version: "0.0.19"};
+__d(function(_g,_r,_i,a,m,_e,_d){"use strict";function e(e){return e&&e.__esModule?e:{default:e}}Object.defineProperty(_e,'__esModule',{value:!0}),Object.defineProperty(_e,"SetAutomaticRecoveryScreen",{enumerable:!0,get:function(){return v}}),Object.defineProperty(_e,"default",{enumerable:!0,get:function(){return v}});var r=_r(_d[0]),t=e(_r(_d[1])),o=e(_r(_d[2])),n=_r(_d[3]),l=_r(_d[4]),i=_r(_d[5]),s=_r(_d[6]),c=_r(_d[7]),d=_r(_d[8]),u=_r(_d[9]),y=_r(_d[10]),f=_r(_d[11]),h=_r(_d[12]);_r(_d[13]),_r(_d[14]),_r(_d[15]),_r(_d[16]),_r(_d[17]),_r(_d[18]),_r(_d[19]),_r(_d[20]),_r(_d[21]),_r(_d[22]),_r(_d[23]),_r(_d[24]),_r(_d[25]),_r(_d[26]),_r(_d[27]),_r(_d[28]),_r(_d[29]),_r(_d[30]),_r(_d[31]),_r(_d[32]),_r(_d[33]);const g=s.styled.div`
+  && {
+    border-width: 4px;
+  }
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  aspect-ratio: 1;
+  border-style: solid;
+  border-color: ${e=>e.$color??"var(--privy-color-accent)"};
+  border-radius: 50%;
+`,v={component:()=>{let{user:e}=(0,l.u)(),{client:s,walletProxy:v,refreshSessionAndUser:p,closePrivyModal:w}=(0,y.u)(),x=(0,f.u)(),{entropyId:j,entropyIdVerifier:b}=x.data?.recoverWallet??{},[S,T]=(0,n.useState)(!1),[M,P]=(0,n.useState)(null),[C,U]=(0,n.useState)(null);function _(){if(!S){if(C)return x.data?.setWalletPassword?.onFailure(C),void w();if(!M)return x.data?.setWalletPassword?.onFailure(Error("User exited set recovery flow")),void w()}}x.onUserCloseViaDialogOrKeybindRef.current=_;let k=!(!S&&!M);return(0,r.jsxs)(r.Fragment,C?{children:[(0,r.jsx)(i.M,{onClose:_},"header"),(0,r.jsx)(g,{$color:"var(--privy-color-error)",style:{alignSelf:"center"},children:(0,r.jsx)(t.default,{height:38,width:38,stroke:"var(--privy-color-error)"})}),(0,r.jsx)(d.T,{style:{marginTop:"0.5rem"},children:"Something went wrong"}),(0,r.jsx)(h.G,{style:{minHeight:"2rem"}}),(0,r.jsx)(i.c,{onClick:()=>U(null),children:"Try again"}),(0,r.jsx)(i.B,{})]}:{children:[(0,r.jsx)(i.M,{onClose:_},"header"),(0,r.jsx)(o.default,{style:{width:"3rem",height:"3rem",alignSelf:"center"}}),(0,r.jsx)(d.T,{style:{marginTop:"0.5rem"},children:"Automatically secure your account"}),(0,r.jsx)(c.S,{style:{marginTop:"1rem"},children:"When you log into a new device, you\u2019ll only need to authenticate to access your account. Never get logged out if you forget your password."}),(0,r.jsx)(h.G,{style:{minHeight:"2rem"}}),(0,r.jsx)(i.c,{loading:S,disabled:k,onClick:()=>(async function(){T(!0);try{let r=await s.getAccessToken(),t=(0,l.f)(e,j);if(!r||!v||!t)return;if(!(await v.setRecovery({accessToken:r,entropyId:j,entropyIdVerifier:b,existingRecoveryMethod:t.recoveryMethod,recoveryMethod:"privy"})).entropyId)throw Error("Unable to set recovery on wallet");let o=await p();if(!o)throw Error("Unable to set recovery on wallet");let n=(0,l.f)(o,t.address);if(!n)throw Error("Unabled to set recovery on wallet");P(!!o),setTimeout(()=>{x.data?.setWalletPassword?.onSuccess(n),w()},u.r)}catch(e){U(e)}finally{T(!1)}})(),children:M?"Success":"Confirm"}),(0,r.jsx)(i.B,{})]})}}},12541,[1404,12649,13052,1194,5049,12580,8154,12616,12617,5054,5052,8149,8171,5050,12581,12582,12583,12584,4638,5055,3447,5061,5056,5057,5062,3256,3628,4830,8153,5053,3016,5063,8147,8148]);
+//# sourceMappingURL=/feel-mirror/_expo/static/js/web/SetAutomaticRecoveryScreen-CDGv27dh-0bfc86c9da163e5898f6d6f0c4b11d9f.js.map
+//# debugId=1b45c1d6-331e-445b-a855-c534c610d8d4

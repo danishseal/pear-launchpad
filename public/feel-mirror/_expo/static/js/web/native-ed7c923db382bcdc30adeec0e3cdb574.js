@@ -1,0 +1,6 @@
+var _sentryDebugIds,_sentryDebugIdIdentifier;void 0===_sentryDebugIds&&(_sentryDebugIds={});try{var stack=(new Error).stack;stack&&(_sentryDebugIds[stack]="a74f1d6f-55d2-4f26-8d28-0f26d1ba2df1",_sentryDebugIdIdentifier="sentry-dbid-a74f1d6f-55d2-4f26-8d28-0f26d1ba2df1")}catch(e){}
+var SENTRY_RELEASE;SENTRY_RELEASE={name: "Feel.cash", version: "0.0.19"};
+__d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,'__esModule',{value:!0}),Object.defineProperty(e,"WebSocket",{enumerable:!0,get:function(){return t}});const t=(0,r(d[0]).getNativeWebSocket)()},12481,[12555]);
+__d(function(g,r,i,a,m,e,d){"use strict";Object.defineProperty(e,'__esModule',{value:!0}),e.getNativeWebSocket=function(){if("undefined"!=typeof WebSocket)return WebSocket;if(void 0!==g.WebSocket)return g.WebSocket;if(void 0!==window.WebSocket)return window.WebSocket;if(void 0!==self.WebSocket)return self.WebSocket;throw new Error("`WebSocket` is not supported in this environment")}},12555,[]);
+//# sourceMappingURL=/feel-mirror/_expo/static/js/web/native-ed7c923db382bcdc30adeec0e3cdb574.js.map
+//# debugId=a74f1d6f-55d2-4f26-8d28-0f26d1ba2df1

@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /account
+Disallow: /advanced-settings
+Disallow: /dev-features
+Disallow: /developer-api
+Disallow: /earn
+Disallow: /edit-profile
+Disallow: /linked-wallets
+Disallow: /notification-settings
+Disallow: /quick-create
+Disallow: /referral-code
+Disallow: /search
+Disallow: /settings
+Disallow: /sign-in-methods
+Disallow: /launch
+Disallow: /launches/
+Disallow: /trade/
+Disallow: /creations/
+Disallow: /r/
+
+Sitemap: https://feel.cash/sitemap.xml

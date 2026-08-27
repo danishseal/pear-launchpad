@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" class="charms-dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no, viewport-fit=cover"
+    />
+    <title>Feel.cash | The cash-native launchpad</title>
+    <meta name="theme-color" content="#051428" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://platform.twitter.com https://us-assets.i.posthog.com https://telegram.org https://js.stripe.com https://crypto-js.stripe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:; manifest-src 'self'; frame-src 'self' https://platform.twitter.com https://auth.privy.io https://privy.feel.cash https://verify.walletconnect.com https://verify.walletconnect.org https://oauth.telegram.org https://pay.coinbase.com https://js.stripe.com https://crypto-js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com; connect-src blob: 'self' https://api.feel.cash https://auth.privy.io https://privy.feel.cash https://*.rpc.privy.systems wss://relay.walletconnect.com wss://relay.walletconnect.org wss://www.walletlink.org https://explorer-api.walletconnect.com https://verify.walletconnect.com https://verify.walletconnect.org https://pulse.walletconnect.org https://echo.walletconnect.com https://rpc.walletconnect.org https://rpc.wallet.coinbase.com https://api.moonpay.com https://api.stripe.com https://r.stripe.com https://q.stripe.com https://m.stripe.network https://js.stripe.com https://crypto-js.stripe.com https://api.relay.link https://api.dev.runwayml.com wss://api.dev.runwayml.com https://*.livekit.cloud wss://*.livekit.cloud https://*.livekit.run wss://*.livekit.run https://api.mainnet-beta.solana.com wss://api.mainnet-beta.solana.com https://*.g.alchemy.com wss://*.g.alchemy.com https://*.supabase.co wss://*.supabase.co https://o529218.ingest.us.sentry.io https://api.mixpanel.com https://us.i.posthog.com https://us-assets.i.posthog.com https://cdn.jsdelivr.net https://*.r2.dev https://cdn.charms.ai https://usernames.worldcoin.org https://auth.farcaster.xyz https://challenges.cloudflare.com"
+    />
+    <meta name="base:app_id" content="6995a17ee0d5d2cf831b5fe7" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Feel.cash" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Feel.cash" />
+    <meta property="og:title" content="Feel.cash | The cash-native launchpad" />
+    <meta
+      property="og:description"
+      content="Launch, discover and trade internet-native coins. Markets are feelings made liquid."
+    />
+    <meta property="og:image" content="https://feel.cash/feelcash-og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@feeldotcash" />
+    <meta name="twitter:title" content="Feel.cash | The cash-native launchpad" />
+    <meta
+      name="twitter:description"
+      content="Launch, discover and trade internet-native coins. Markets are feelings made liquid."
+    />
+    <meta name="twitter:image" content="https://feel.cash/feelcash-og.jpg" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="48x48" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+      }
+      /* Disable body scrolling so <ScrollView> behaves like it does on native. */
+      body {
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+    <style>
+      /* Scoped to .charms-dark on purpose: global.css ships
+         `html { background-color: var(--color-toolbar) }` (the Charms light
+         blue) and is injected AFTER this block, so a bare `html` rule loses
+         the tie on document order. The class wins on specificity. */
+      html.charms-dark {
+        color-scheme: dark;
+        background: #051428 linear-gradient(180deg, #051428 0%, #0b1426 100%) no-repeat fixed;
+      }
+      html.charms-dark #root,
+      html.charms-loading #root {
+        background-color: #0000;
+      }
+    </style>
+    <style>
+      input,
+      textarea {
+        outline: none;
+      }
+      .recharts-wrapper *:focus:not(:focus-visible) {
+        outline: none;
+      }
+      *:focus,
+      *:focus-visible {
+        outline: none;
+      }
+    </style>
+    <script>
+      (() => {
+        var h = location.hostname.split(".")[0];
+        var ua = navigator.userAgent || "";
+        if (
+          h === "world" ||
+          h === "fc" ||
+          h.endsWith("-world") ||
+          h.endsWith("-fc") ||
+          "WorldApp" in window ||
+          "MiniKit" in window
+        ) {
+          document.documentElement.classList.add("is-miniapp");
+        }
+        if (/Twitter for (iPhone|iPad|iPod)/i.test(ua)) {
+          document.documentElement.classList.add("is-x-inapp");
+        }
+      })();
+    </script>
+    <script>
+      (() => {
+        document.documentElement.classList.add("charms-loading");
+      })();
+    </script>
+  <link rel="preload" href="/_expo/static/css/native-tabs.module-883418aa864d9785deabae73290f6c88.css" as="style">
+<link rel="stylesheet" href="/_expo/static/css/native-tabs.module-883418aa864d9785deabae73290f6c88.css"><link rel="preload" href="/_expo/static/css/global-4f16650c0f1d035c7d76a6b4e00fcb5f.css" as="style">
+<link rel="stylesheet" href="/_expo/static/css/global-4f16650c0f1d035c7d76a6b4e00fcb5f.css"><link rel="icon" href="/favicon.ico" /></head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  <script src="/_expo/static/js/web/__expo-metro-runtime-1f8f5d3ca6b7f58204d51e14506d73fb.js" defer></script><script src="/_expo/static/js/web/__common-699f214e067fd01bf084733ef22c0e4a.js" defer></script><script src="/_expo/static/js/web/entrypoint-2924bae7f371a5cc76cc50e3862b7745.js" defer></script>
+</body>
+</html>
