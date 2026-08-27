@@ -1,20 +1,14 @@
 "use client";
 
 import {
-  ArrowDown, ArrowUp, CaretLeft, CaretRight, DotsThreeOutline, House, Info,
-  MagnifyingGlass, Plus, User, UserCircle,
+  ArrowDown, ArrowUp, CaretLeft, CaretRight, User,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useLaunches, type Launch } from "@/lib/peard/launches";
-import { useMarket, usd, type MarketSnapshot } from "@/lib/peard/market";
-import { ConnectButton } from "./connect-button";
+import { useEffect, useMemo, useState } from "react";
+import { useLaunches, type Launch } from "./launches";
+import { useMarket, usd } from "@/lib/peard/market";
 import { useIcons, localIcon, tint } from "@/lib/peard/icons";
-
-const navItems = [
-  { Icon: House, label: "Home", href: "/" },
-  { Icon: UserCircle, label: "Account", href: "/account" },
-];
+import { AppHeader, AppSidebar } from "./app-chrome";
 
 /**
  * The search box does nothing yet, deliberately.
@@ -23,32 +17,6 @@ const navItems = [
  * there are launches it should search THOSE; searching them today would be a
  * control that always returns nothing.
  */
-
-function Sidebar() {
-  return <aside className="sidebar">
-    <div className="brand">peard</div>
-    <nav aria-label="Primary navigation">
-      {navItems.map(({ Icon, label, href }, index) => <Link href={href} style={{ textDecoration: "none" }} className={index === 0 ? "nav-item active" : "nav-item"} key={label}>
-        <Icon className="nav-icon" weight={index === 0 ? "fill" : "regular"}/>{label}
-      </Link>)}
-      <Link className="launch" href="/launch"><Plus weight="bold"/> Launch a coin</Link>
-    </nav>
-    <Link className="more" href="/account"><DotsThreeOutline/> More</Link>
-  </aside>;
-}
-
-function Header({ q, setQ }: { q: string; setQ: (v: string) => void }) {
-  return <header className="topbar">
-    <label className="search"><MagnifyingGlass/><input aria-label="Search" placeholder="Search underlyings" value={q} onChange={(e) => setQ(e.target.value)}/></label>
-    <div className="topbar-actions">
-      <button className="how"><Info weight="fill"/> How it works</button>
-      <ConnectButton/>
-    </div>
-  </header>;
-}
-
-/** The six artwork regions the stylesheet already carries. */
-const FEATURES = ["dog-feature", "light-feature", "cat-feature", "baseball-feature", "action-feature", "android-feature"];
 
 /*
  * The "Moved most recently" carousel is GONE, for the same reason the grid
@@ -119,21 +87,36 @@ function LaunchCard({ l, icon }: { l: Launch; icon?: string }) {
  */
 function TopStrip({ launches, icons }: { launches: Launch[]; icons: Record<string, string> }) {
   const [slide, setSlide] = useState(0);
+  const [cardsPerPage, setCardsPerPage] = useState(2);
   const shown = launches.slice(0, 6);
-  const pages = Math.max(1, Math.ceil(shown.length / 3));
+  const pages = Math.max(1, Math.ceil(shown.length / cardsPerPage));
+  const step = cardsPerPage === 1 ? 315 : 712;
+
+  useEffect(() => {
+    const narrow = window.matchMedia("(max-width: 700px)");
+    const sync = () => {
+      setCardsPerPage(narrow.matches ? 1 : 2);
+      setSlide(0);
+    };
+    sync();
+    narrow.addEventListener("change", sync);
+    return () => narrow.removeEventListener("change", sync);
+  }, []);
 
   if (shown.length === 0) return null;
 
   return <section className="trending" aria-labelledby="strip-title">
     <div className="section-heading">
-      <h1 id="strip-title">Just launched</h1>
+      <h1 id="strip-title">Trending now</h1>
       <div>
         <button aria-label="Previous" disabled={slide === 0} onClick={() => setSlide((v) => Math.max(0, v - 1))}><CaretLeft/></button>
         <button aria-label="Next" disabled={slide >= pages - 1} onClick={() => setSlide((v) => Math.min(pages - 1, v + 1))}><CaretRight/></button>
       </div>
     </div>
-    <div className="feature-row" style={{ transform: `translateX(-${slide * 1068}px)` }}>
-      {shown.map((l) => <FeatureCard key={l.mint} l={l} icon={icons[l.on?.assetMint ?? ""]}/>)}
+    <div className={`feature-viewport${pages > 1 ? " is-scrollable" : ""}`}>
+      <div className="feature-row" style={{ transform: `translateX(-${slide * step}px)` }}>
+        {shown.map((l) => <FeatureCard key={l.mint} l={l} icon={icons[l.on?.assetMint ?? ""]}/>)}
+      </div>
     </div>
     <div className="pagination" aria-label={`Page ${slide + 1} of ${pages}`}>
       {Array.from({ length: pages }).map((_, i) => <i className={slide === i ? "active" : ""} key={i}/>)}
@@ -149,9 +132,17 @@ function FeatureCard({ l, icon }: { l: Launch; icon?: string }) {
       // eslint-disable-next-line @next/next/no-img-element
       ? <img className="feature-art" alt="" src={art}/>
       : <span className="feature-initials">{(l.symbol || l.mint).slice(0, 3).toUpperCase()}</span>}
-    <div className="feature-user"><User weight="fill"/> {l.on?.id ?? "launch"}</div>
+    <div className="feature-user">
+      <span className="feature-user-mark">
+        {art
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img alt="" src={art}/>
+          : null}
+      </span>
+      {l.creator ? `${l.creator.slice(0, 10)}…` : "launch"}
+    </div>
     <div className="feature-copy">
-      <div><b>{l.name || l.symbol}</b><small>${l.symbol}</small></div>
+      <div className="feature-token"><b>{l.name || l.symbol}</b><small>${l.symbol}<i/></small></div>
       <div className="quote">
         <b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "new"}</b>
         <Change pct={market?.change.h24 ?? null}/>
@@ -200,9 +191,9 @@ export default function HomePage() {
       : launches;
   }, [launches, q]);
   const stripIcons = useIcons((visibleLaunches ?? []).map((l) => l.on?.assetMint));
-  return <main className="app-shell">
+  return <main className="app-shell app-chrome-shell">
     <div className="ambient"/>
-    <Sidebar/>
-    <section className="workspace"><Header q={q} setQ={setQ}/>{visibleLaunches?.length ? <TopStrip launches={visibleLaunches} icons={stripIcons}/> : null}<ExploreSection launches={visibleLaunches} error={error}/></section>
+    <AppSidebar/>
+    <section className="workspace"><AppHeader query={q} onQueryChange={setQ}/>{visibleLaunches?.length ? <TopStrip launches={visibleLaunches} icons={stripIcons}/> : null}<ExploreSection launches={visibleLaunches} error={error}/></section>
   </main>;
 }

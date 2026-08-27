@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { usePeardSigner } from "@/lib/peard/signer";
 import {
-  CaretLeft, CaretRight, Check, ImageSquare, LinkSimple, MagnifyingGlass, PencilSimple, UploadSimple, X,
+  CaretLeft, CaretRight, Check, ImageSquare, LinkSimple, MagnifyingGlass, PencilSimple, UploadSimple,
 } from "@phosphor-icons/react";
 import "./launch.css";
-import { useRegistry, launchable, formatPrice, type Row } from "@/lib/peard/underlyings";
+import { launchable, formatPrice, type Row } from "@/lib/peard/underlyings";
+import { useRegistry } from "../registry";
 import {
   launchOnMeteora, LAUNCH_FEE_BPS, DEFAULT_SUPPLY, INITIAL_MARKET_CAP_USD,
   MIGRATION_MARKET_CAP_USD, type MeteoraLaunchResult,
@@ -17,6 +18,7 @@ import { recordAttachment } from "@/lib/peard/attachments";
 import { explorerUrl } from "@/lib/peard/config";
 import { useIcons, assetInfo, localIcon, tint } from "@/lib/peard/icons";
 import { ConnectButton } from "../connect-button";
+import { AppHeader, AppSidebar } from "../app-chrome";
 
 /**
  * Launching, as a five-step wizard.
@@ -494,12 +496,12 @@ function LaunchWizard() {
     }
   };
 
-  return <main className="launch-shell">
+  return <main className="launch-shell app-chrome-shell">
     <div className="launch-halo halo-one"/><div className="launch-halo halo-two"/><div className="launch-halo halo-three"/>
-    <Link className="launch-close" href="/" aria-label="Close"><X/></Link>
-
-    <div className="launch-canvas">
-      <Link className="launch-wordmark" href="/">peard</Link>
+    <AppSidebar/>
+    <section className="launch-main">
+      <AppHeader/>
+      <div className="launch-canvas">
 
       <form className="wiz" onSubmit={onSubmit}>
         <div className="wiz-chrome">
@@ -526,7 +528,8 @@ function LaunchWizard() {
           connected={Boolean(signer)} busy={busy} failure={failure} result={result}
           onEdit={setStep}/> : null}
       </form>
-    </div>
+      </div>
+    </section>
   </main>;
 }
 
@@ -536,5 +539,5 @@ function LaunchWizard() {
  * bails to client rendering silently.
  */
 export default function LaunchPage() {
-  return <Suspense fallback={<main className="launch-shell"/>}><LaunchWizard/></Suspense>;
+  return <Suspense fallback={<main className="launch-shell app-chrome-shell"><AppSidebar/><section className="launch-main"><AppHeader/></section></main>}><LaunchWizard/></Suspense>;
 }

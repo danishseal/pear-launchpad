@@ -8,6 +8,7 @@
 .launch-shell{background:linear-gradient(135deg,#222a24 0%,#303d33 55%,#435746 100%)}.launch-shell:before{filter:hue-rotate(72deg) saturate(.35);opacity:.16}.launch-halo{background:radial-gradient(circle,rgba(121,174,133,.28),rgba(74,108,82,.1) 44%,transparent 72%)}.launch-close{background:rgba(35,52,40,.78);border-color:rgba(204,230,209,.16)}.original-form-card,.preview-card,.launch-done{border-color:rgba(198,224,203,.25);background:linear-gradient(180deg,rgba(53,72,58,.95),rgba(35,48,39,.96));box-shadow:0 18px 45px rgba(14,24,16,.22),inset 0 1px rgba(255,255,255,.08)}.top-fields input,.top-fields textarea,.ticker-field,.social-section input,.developer-section>label{border-color:rgba(167,198,173,.34);background:rgba(31,46,35,.75)}.top-fields input:focus,.top-fields textarea:focus,.social-section input:focus{border-color:#83b98e;box-shadow:0 0 0 2px rgba(104,166,118,.14)}.original-section{border-color:rgba(205,228,209,.13)}.original-upload{border-color:rgba(173,206,179,.48);background:rgba(30,46,34,.56)}.original-upload>svg{color:#b9d8bf}.feeling-options>button{border-color:rgba(165,198,171,.32);background:rgba(32,49,37,.62)}.feeling-options>button.selected{border-color:#7fb58a;background:rgba(64,98,70,.76);box-shadow:inset 0 0 12px rgba(111,177,126,.16)}.feeling-options>button>span{background:#dcecdf;color:#477d53}.feeling-options>button>svg{color:#8fc49a}.preview-art{background:rgba(29,44,33,.65)}.preview-launch{background:linear-gradient(#72b480,#477d53);box-shadow:inset 0 0 10px #9bd1a6}.preview-launch:disabled{background:#34473a;color:#78907d}.launch-done>span{background:#75c386;color:#173b20}.launch-done button{border-color:#66846c;background:#405b46}
 
 .launch-shell:before{background-image:linear-gradient(rgba(22,31,25,.7),rgba(22,31,25,.9)),url('../pear-painting-4k-desktop.png');background-position:center;background-size:cover;filter:none;opacity:1}
+
 .launch-wordmark{background-image:url('/peard.webp')}
 
 /* Underlying picker: the one field a peard launch cannot go without. */
@@ -35,7 +36,7 @@
  * LONG's shape: Back on the left, the step you are going TO on the right,
  * a thin rail under it, then one decision per screen.
  */
-.wiz{width:min(560px,100%);margin:0 auto;display:block}
+.wiz{width:min(760px,100%);margin:0 auto;padding:18px 32px 34px;display:block;border:0;border-radius:0;background:transparent;box-shadow:none}
 .wiz-chrome{display:flex;align-items:center;justify-content:space-between;height:44px;font-size:14px}
 .wiz-back,.wiz-next{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#a4afa7;text-decoration:none;padding:0}
 .wiz-back:hover{color:#e8f0ea}
@@ -72,8 +73,8 @@
 .wiz-chips button.on{background:#e9f2ea;border-color:#e9f2ea;color:#25452e}
 .wiz-chips i{font-style:normal;opacity:.55;margin-left:4px}
 
-.wiz-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:18px}
-.wiz-card{text-align:left;border:1px solid #465349;border-radius:12px;background:rgba(255,255,255,.03);padding:12px;color:inherit}
+.wiz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.wiz-card{min-width:0;text-align:left;border:1px solid #465349;border-radius:12px;background:rgba(255,255,255,.03);padding:13px;color:inherit}
 .wiz-card:hover{border-color:#78a883}
 .wiz-card-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .wiz-card-top b{font-size:14px}
@@ -105,7 +106,8 @@
 .wiz-done h2{margin-bottom:6px}
 .wiz-done>p{color:#a4afa7;font-size:13px;margin:0 0 18px}
 
-@media(max-width:560px){.wiz-grid{grid-template-columns:1fr}}
+@media(max-width:800px){.wiz{width:calc(100% - 24px)}}
+@media(max-width:560px){.wiz{width:100%;padding:14px 16px 22px;border-radius:18px}.wiz-grid{grid-template-columns:1fr}}
 
 /* ------------------------------------------------ the X, brought in line
  * It was pinned to the viewport corner while the wizard sits in a 560px
@@ -207,3 +209,34 @@
 .wiz-upload{cursor:pointer}
 .wiz-file:focus-visible + .wiz-upload,.wiz-upload:focus-visible{outline:2px solid #78a883;outline-offset:2px}
 .wiz-prefix{color:#8e9d92;font-size:14px}
+
+.launch-shell,.launch-form-column h1,.launch-preview-column h2,.launch-done h3,.wiz h1,.wiz h2{font-family:var(--font-sans),Arial,sans-serif}
+.launch-wordmark{font-family:var(--font-instrument-serif),Georgia,serif;font-style:italic;color:#fff;text-shadow:0 0 7px rgba(255,255,255,.92),0 0 18px rgba(255,255,255,.48)}
+
+/* Individual surfaces sit directly on the painting; the wizard itself stays
+   transparent so these read as components instead of one large dark canvas. */
+.wiz-search,
+.wiz-chips button,
+.wiz-quick-card,
+.wiz-trending button,
+.wiz-card,
+.wiz-panel,
+.wiz-live,
+.wiz-field input,
+.wiz-field textarea,
+.wiz-upload,
+.wiz-prefixed,
+.wiz-rowcard,
+.wiz-note-box,
+.underlying-picked,
+.underlying-list button,
+.underlying-open input,
+.original-form-card{
+  background:#263229;
+  border-color:#4a5a4e;
+  box-shadow:0 8px 24px rgba(10,17,12,.14),inset 0 1px rgba(255,255,255,.025);
+}
+.wiz-trending button{margin-bottom:4px}
+.wiz-chips button{box-shadow:none}
+.wiz-chips button.on{background:#e9f2ea;border-color:#e9f2ea;color:#25452e}
+.wiz-fee-split>div{background:#2a3a2e}

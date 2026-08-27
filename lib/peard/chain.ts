@@ -244,6 +244,35 @@ export function loadAll(): Promise<Snapshot> {
   return share("registry", readAll);
 }
 
+/**
+ * The launch index only needs the registry entries and their markets.
+ * Keeping this separate from `loadAll` avoids scanning every holder position
+ * before the homepage can render.
+ */
+export function loadLaunchRegistry(): Promise<Pick<Snapshot, "pairables" | "markets">> {
+  return share("launch-registry", async () => {
+    const [pa, ma] = await Promise.all([
+      serial(() =>
+        conn.getProgramAccounts(PROGRAM_ID, {
+          filters: [{ memcmp: { offset: 0, bytes: disc("Pairable"), encoding: "base64" } }],
+        })
+      ),
+      serial(() =>
+        conn.getProgramAccounts(PROGRAM_ID, {
+          filters: [{ memcmp: { offset: 0, bytes: disc("Market"), encoding: "base64" } }],
+        })
+      ),
+    ]);
+
+    return {
+      pairables: pa
+        .map((account) => decodePairable(account.pubkey, account.account.data as Buffer))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+      markets: ma.map((account) => decodeMarket(account.pubkey, account.account.data as Buffer)),
+    };
+  });
+}
+
 async function readAll(): Promise<Snapshot> {
   // Queued rather than fired together: `getProgramAccounts` is the method
   // public endpoints rate-limit hardest, and three of them plus the venues'

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowSquareOut, CaretLeft, CheckCircle, Copy,
-  DotsThreeOutline, House, Info, MagnifyingGlass, Plus, ShareNetwork, UserCircle,
+  ShareNetwork,
 } from "@phosphor-icons/react";
 import { useUnderlying, ago, type Detail } from "@/lib/peard/underlying-detail";
 import { formatPrice } from "@/lib/peard/underlyings";
@@ -12,7 +12,7 @@ import { explorerUrl } from "@/lib/peard/config";
 import { useIcons, localIcon, tint } from "@/lib/peard/icons";
 import { useMarket, usd, chartUrl } from "@/lib/peard/market";
 import { attachmentFor, resolveUnderlying, type Attachment } from "@/lib/peard/attachments";
-import { ConnectButton } from "../../connect-button";
+import { AppHeader, AppSidebar } from "../../app-chrome";
 
 /**
  * One page, two things it can be showing.
@@ -29,22 +29,6 @@ import { ConnectButton } from "../../connect-button";
  */
 function looksLikeMint(s: string): boolean {
   return s.length >= 32;
-}
-
-function TokenSidebar() {
-  return <aside className="token-sidebar"><Link className="token-brand" href="/">peard</Link><nav>
-    <Link href="/"><House/>Home</Link><Link href="/account"><UserCircle/>Account</Link>
-    <Link className="token-launch-link" href="/launch"><Plus/>Launch a coin</Link></nav>
-    <Link className="token-more" href="/"><DotsThreeOutline/>More</Link>
-  </aside>;
-}
-
-function TokenHeader() {
-  return <header className="token-header">
-    <label><MagnifyingGlass/><input aria-label="Search" placeholder="Search"/></label>
-    <button><Info weight="fill"/>How it works</button>
-    <ConnectButton className="token-signup connect-wallet" connectLabel="Connect"/>
-  </header>;
 }
 
 function Mark({ id, mint, size }: { id: string; mint: string | null; size?: number }) {
@@ -77,23 +61,33 @@ function LaunchView({ mint }: { mint: string }) {
 
   const { detail } = useUnderlying(under ?? "");
 
-  return <main className="token-shell"><TokenSidebar/><div className="token-main"><TokenHeader/>
+  return <main className="token-shell app-chrome-shell"><AppSidebar/><div className="token-main"><AppHeader/>
     <section className="token-identity">
       <Link href="/" aria-label="Back"><CaretLeft/></Link>
       <Mark id={under ?? mint} mint={detail?.p.assetMint ?? null}/>
-      <div>
+      <div className="token-identity-copy">
         <h1>{att?.name ?? "Launch"}
           <button aria-label="Copy link" className="icon-btn" onClick={() => navigator.clipboard?.writeText(window.location.href)}><ShareNetwork/></button>
         </h1>
         <p>${att?.symbol ?? mint.slice(0, 4)}
           <button aria-label="Copy the mint" className="icon-btn" onClick={() => navigator.clipboard?.writeText(mint)}><Copy/></button>
         </p>
+        <div className="token-badges">
+          <span>{market ? "Live market" : unlisted ? "Indexing" : "Loading"}</span>
+          <span>{under ? `Priced on ${under}` : "Reading underlying"}</span>
+        </div>
       </div>
     </section>
     <div className="token-divider"/>
 
     <div className="token-layout">
       <div>
+        <section className="token-overview" aria-label="Market overview">
+          <div><span>Price</span><b>{market ? usd(market.priceUsd, 6) : "—"}</b></div>
+          <div><span>Market cap</span><b>{market ? usd(market.marketCapUsd ?? market.fdvUsd) : "—"}</b></div>
+          <div><span>Liquidity</span><b>{market ? usd(market.liquidityUsd) : "—"}</b></div>
+          <div><span>24h volume</span><b>{market ? usd(market.volume.h24) : "—"}</b></div>
+        </section>
         <section className="chart-panel">
           <div className="chart-value">
             <strong>{market ? usd(market.priceUsd, 6) : loading ? "…" : "—"}</strong>
@@ -160,6 +154,11 @@ function LaunchView({ mint }: { mint: string }) {
 
       <aside className="trade-panel">
         <div className="perp-head"><b>Trade</b><span>{market ? market.dexId : "pending"}</span></div>
+        <div className="trade-summary">
+          <div><span>Token</span><b>${att?.symbol ?? mint.slice(0, 4)}</b></div>
+          <div><span>Quote</span><b>USDC</b></div>
+          <div><span>Underlying</span><b>{under ?? "—"}</b></div>
+        </div>
         <p className="perp-funding">
           This token trades on a bonding curve against USDC. Buying and selling from inside peard is not wired yet.
         </p>
@@ -180,7 +179,7 @@ function UnderlyingView({ id }: { id: string }) {
   const { detail, loading, error } = useUnderlying(id);
   const ticker = id.toUpperCase();
 
-  return <main className="token-shell"><TokenSidebar/><div className="token-main"><TokenHeader/>
+  return <main className="token-shell app-chrome-shell"><AppSidebar/><div className="token-main"><AppHeader/>
     <section className="token-identity">
       <Link href="/" aria-label="Back"><CaretLeft/></Link>
       <Mark id={ticker} mint={detail?.p.assetMint ?? null}/>

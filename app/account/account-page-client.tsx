@@ -6,7 +6,8 @@ import { usePeardAddress } from "@/lib/peard/signer";
 import { loadAll, type Market, type Pairable } from "@/lib/peard/chain";
 import { explorerUrl } from "@/lib/peard/config";
 import { ConnectButton } from "../connect-button";
-import { ArrowDown, ArrowUp, Coins, DotsThreeOutline, Gift, House, Info, MagnifyingGlass, Plus, RocketLaunch, ShareNetwork, SlidersHorizontal, User, UserCircle } from "@phosphor-icons/react";
+import { AppHeader, AppSidebar } from "../app-chrome";
+import { ArrowDown, ArrowUp, Coins, Gift, RocketLaunch, ShareNetwork, SlidersHorizontal, User } from "@phosphor-icons/react";
 
 const tabs = ["Holdings", "Launches", "Activity"] as const;
 
@@ -31,10 +32,6 @@ function useMyLaunches(owner: string | null) {
   return state;
 }
 type AccountTab = (typeof tabs)[number];
-
-function Sidebar() { return <aside className="account-sidebar"><Link className="account-brand" href="/">peard</Link><nav aria-label="Primary navigation"><Link href="/"><House />Home</Link><Link className="active" href="/account"><UserCircle weight="fill" />Account</Link><Link className="account-launch" href="/launch"><Plus weight="bold" />Launch a coin</Link></nav><button className="account-more"><DotsThreeOutline />More</button></aside>; }
-
-function Header() { return <header className="account-topbar"><label><MagnifyingGlass /><input aria-label="Search" placeholder="Search coins or users" /></label><button className="account-how"><Info weight="fill" />How it works</button><ConnectButton className="account-signup connect-wallet" connectLabel="Connect"/></header>; }
 
 function TabBody({ tab, connected, mine }: {
   tab: AccountTab;
@@ -91,7 +88,7 @@ export default function AccountPageClient() {
   const mine = useMyLaunches(owner);
   const short = useMemo(() => owner ? `${owner.slice(0, 4)}…${owner.slice(-4)}` : null, [owner]);
 
-  return <main className="account-shell"><div className="account-ambient" /><Sidebar /><section className="account-main"><Header />
+  return <main className="account-shell app-chrome-shell"><div className="account-ambient" /><AppSidebar /><section className="account-main"><AppHeader />
     <div className="account-profile-heading"><div className="account-avatar"><User weight="fill" /></div>
       <div><h1>{short ?? "Account"}</h1>
         {owner ? <a href={explorerUrl("address", owner)} target="_blank" rel="noopener noreferrer" style={{ color: "#94a397", fontSize: 13 }}>view on explorer</a> : <ConnectButton className="account-signup" connectLabel="Connect"/>}
