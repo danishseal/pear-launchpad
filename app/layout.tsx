@@ -42,7 +42,7 @@ const instrumentSerif = localFont({
 export const metadata: Metadata = {
   title: "peard — Discover Coins",
   description: "Discover trending community coins on peard.",
-  icons: { icon: "/peard.webp", apple: "/peard.webp" },
+  icons: { icon: "/favicon.png", apple: "/peard.webp" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
